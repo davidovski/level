@@ -225,7 +225,9 @@ func OnCollideSpring(this, other *GameObject) bool {
 }
 
 func OnCollideSpike(this, other *GameObject) bool {
-    other.game.ResetAll()
+    if other == this.game.player {
+        other.game.ResetAll()
+    }
     return true
 }
 

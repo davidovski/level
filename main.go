@@ -164,15 +164,16 @@ func (g *Game) Init() {
 func (g *Game) Update() error {
     g.time += 1
 
-    if inpututil.IsKeyJustPressed(ebiten.KeyR) {
-        if g.state == REVERSING {
-            g.state = IN_GAME
-            g.shaderName = "none"
-        } else if g.state == IN_GAME {
+    if ebiten.IsKeyPressed(ebiten.KeyR) {
+        if g.state == IN_GAME {
             g.state = REVERSING
             g.shaderName = "vcr"
         }
-
+    } else {
+        if g.state == REVERSING {
+            g.state = IN_GAME
+            g.shaderName = "none"
+        }
     }
 
     if g.state == IN_GAME {
