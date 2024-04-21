@@ -18,10 +18,11 @@ const (
     screenHeight = 240
     tileSize = 16
     playerSpeed = 2.1
-    jumpHeight = 3.2
+    jumpHeight = 4
     rewindSpeed = 2
     gravity = 0.16
-    friction = 0.9
+    friction = 0.75
+    airResistance = 0.98
 )
 
 var (
@@ -111,6 +112,8 @@ func (g *Game) Init() {
     g.toPlace = append(g.toPlace, NewBox(0, 0))
     g.toPlace = append(g.toPlace, NewBox(0, 0))
     g.toPlace = append(g.toPlace, NewSpring(0, 0))
+    g.toPlace = append(g.toPlace, NewSpike(0, 0))
+    g.toPlace = append(g.toPlace, NewLeftSpike(0, 0))
 
     g.surface = ebiten.NewImage(screenWidth, screenHeight)
     g.shaderName = "none"
@@ -162,9 +165,7 @@ func (g *Game) Update() error {
         if g.state == REVERSING {
             g.state = IN_GAME
             g.shaderName = "none"
-        }
-
-        if g.state == IN_GAME {
+        } else if g.state == IN_GAME {
             g.state = REVERSING
             g.shaderName = "vcr"
         }
@@ -200,12 +201,16 @@ func (g *Game) Update() error {
 
     if g.state == PLACING {
         if len(g.toPlace) > 0 {
+            placeable := g.toPlace[0]
             cx, cy := ebiten.CursorPosition()
             cx = int(math.Floor(float64(cx)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
             cy = int(math.Floor(float64(cy)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
 
-            g.toPlace[0].x = float32(cx)
-            g.toPlace[0].y = float32(cy)
+            cx += placeable.offsetX
+            cy += placeable.offsetY
+
+            placeable.x = float32(cx)
+            placeable.y = float32(cy)
 
             if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
                 g.PlaceObject(cx, cy)
