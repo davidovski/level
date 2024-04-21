@@ -129,7 +129,7 @@ func NewObject(x, y float32) *GameObject{
 func NewPlayer(x, y float32) *GameObject{
     player := NewObject(x, y)
 
-    playerImage, _, err := ebitenutil.NewImageFromFile("Assets/Main Characters/Ninja Frog/Idle (32x32).png")
+    playerImage, _, err := ebitenutil.NewImageFromFile("character.png")
 	if err != nil {
 		log.Fatal(err)
 	}
