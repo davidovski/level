@@ -98,22 +98,25 @@ func (g * Game)ReplayPoint() {
     }
 }
 
-func (g * Game)ResetAll() {
+func (g * Game) ResetAll() {
     for _, obj := range g.objects {
         obj.x = obj.startx
         obj.y = obj.starty
     }
+    g.recording = g.recording[:0];
 }
 
 func (g *Game) Init() {
     g.state = PLACING
 
-    g.toPlace = append(g.toPlace, NewBox(0, 0))
-    g.toPlace = append(g.toPlace, NewBox(0, 0))
-    g.toPlace = append(g.toPlace, NewBox(0, 0))
-    g.toPlace = append(g.toPlace, NewSpring(0, 0))
-    g.toPlace = append(g.toPlace, NewSpike(0, 0))
-    g.toPlace = append(g.toPlace, NewLeftSpike(0, 0))
+    g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewLeftSpike(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
 
     g.surface = ebiten.NewImage(screenWidth, screenHeight)
     g.shaderName = "none"
@@ -142,9 +145,9 @@ func (g *Game) Init() {
 
     g.tilemap.UpdateSurface()
 
-    g.player = NewPlayer(4 * tileSize, 8 * tileSize)
+    g.player = NewPlayer(g, 4 * tileSize, 8 * tileSize)
     g.objects = append(g.objects, g.player)
-    g.exit = NewExit(21 * tileSize, 8 * tileSize)
+    g.exit = NewExit(g, 21 * tileSize, 8 * tileSize)
     g.objects = append(g.objects, g.exit)
 
     g.ResetAll()
@@ -221,11 +224,16 @@ func (g *Game) Update() error {
     return nil
 }
 
-func (g *Game)PlaceObject(cx, cy int) {
-        g.toPlace[0].startx = float32(cx)
-        g.toPlace[0].starty = float32(cy)
+func (g *Game) PlaceObject(cx, cy int) {
+        placeable := g.toPlace[0]
+        if placeable.HasCollision(*g.tilemap, g.objects, NONE) {
+            return
+        }
 
-        g.objects = append(g.objects, g.toPlace[0])
+        placeable.startx = float32(cx)
+        placeable.starty = float32(cy)
+
+        g.objects = append(g.objects, placeable)
 
         g.toPlace = g.toPlace[1:len(g.toPlace)]
 
@@ -299,7 +307,7 @@ func main() {
     LoadShaders()
 
     var err error
-    tilesImage, _, err = ebitenutil.NewImageFromFile("tiles.png")
+    tilesImage, _, err = ebitenutil.NewImageFromFile("assets/tiles.png")
 	if err != nil {
 		log.Fatal(err)
 	}

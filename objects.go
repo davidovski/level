@@ -11,7 +11,18 @@ const (
     SPRING_FORCE = 8
 )
 
+type Direction int
+
+const (
+	NONE Direction = iota
+	LEFT
+	RIGHT
+    UP
+    DOWN
+)
+
 type GameObject struct {
+    game *Game
     startx, starty float32
     x, y float32
     vx, vy float32
@@ -22,8 +33,10 @@ type GameObject struct {
     resistance float32
     image *ebiten.Image
     onGround bool
-    onCollideX func(this, other *GameObject) bool
-    onCollideY func(this, other *GameObject) bool
+    onCollideUp func(this, other *GameObject) bool
+    onCollideDown func(this, other *GameObject) bool
+    onCollideLeft func(this, other *GameObject) bool
+    onCollideRight func(this, other *GameObject) bool
 }
 
 
@@ -32,19 +45,34 @@ type Player struct {
 }
 
 func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
+    var direction Direction
     o.vy += gravity
 
     o.vx *= o.resistance
     o.vy *= o.resistance
 
     o.x += o.vx
-    if o.HasCollision(tilemap, others, true) {
+
+    if o.vx > 0 {
+        direction = RIGHT
+    } else {
+        direction = LEFT
+    }
+
+    if o.HasCollision(tilemap, others, direction) {
         o.x -= o.vx
         o.vx = 0
     }
 
     o.y += o.vy
-    if o.HasCollision(tilemap, others, false) {
+
+    if o.vy > 0 {
+        direction = UP
+    } else {
+        direction = DOWN
+    }
+
+    if o.HasCollision(tilemap, others, direction) {
         o.onGround = true;
         o.vx *= o.friction
 
@@ -55,17 +83,22 @@ func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
     }
 }
 
-func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, x bool) bool {
+func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, dir Direction) bool {
     if tilemap.CollideObject(o) {
         return true
     }
     for _, obj := range others {
         if obj.Collide(o) {
             var f func(this, other *GameObject) bool
-            if x {
-                f = obj.onCollideX
-            } else {
-                f = obj.onCollideY
+            switch dir {
+                case UP:
+                    f = obj.onCollideUp
+                case DOWN:
+                    f = obj.onCollideDown
+                case LEFT:
+                    f = obj.onCollideLeft
+                case RIGHT:
+                    f = obj.onCollideRight
             }
 
             if f == nil{
@@ -113,8 +146,9 @@ func OnCollideGeneric(this, other *GameObject) bool {
     return true
 }
 
-func NewObject(x, y float32) *GameObject{
+func NewObject(game *Game, x, y float32) *GameObject{
     obj := &GameObject{
+        game: game,
         startx: x,
         starty: y,
     }
@@ -126,10 +160,10 @@ func NewObject(x, y float32) *GameObject{
     return obj
 }
 
-func NewPlayer(x, y float32) *GameObject{
-    player := NewObject(x, y)
+func NewPlayer(game *Game, x, y float32) *GameObject{
+    player := NewObject(game, x, y)
 
-    playerImage, _, err := ebitenutil.NewImageFromFile("character.png")
+    playerImage, _, err := ebitenutil.NewImageFromFile("assets/character.png")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -139,47 +173,47 @@ func NewPlayer(x, y float32) *GameObject{
     return player
 }
 
-func NewExit(x, y float32) *GameObject{
-    exit := NewObject(x, y)
+func NewExit(game *Game, x, y float32) *GameObject{
+    exit := NewObject(game, x, y)
 
     exit.image = tilesImage.SubImage(image.Rect(0, 16, 32, 48)).(*ebiten.Image)
 
     return exit
 }
 
-func NewBox(x, y float32) *GameObject{
-    box := NewObject(x, y)
+func NewBox(game *Game, x, y float32) *GameObject{
+    box := NewObject(game, x, y)
 
     box.image = tilesImage.SubImage(image.Rect(160, 0, 176, 16)).(*ebiten.Image)
 
     return box
 }
 
-func NewSpring(x, y float32) *GameObject{
-    spring := NewObject(x, y)
+func NewSpring(game *Game, x, y float32) *GameObject{
+    spring := NewObject(game, x, y)
 
     spring.image = tilesImage.SubImage(image.Rect(176, 0, 192, 16)).(*ebiten.Image)
-    spring.onCollideY = OnCollideSpring
+    spring.onCollideUp = OnCollideSpring
 
     return spring
 }
 
-func NewSpike(x, y float32) *GameObject{
-    spike := NewObject(x, y)
+func NewSpike(game *Game, x, y float32) *GameObject{
+    spike := NewObject(game, x, y)
 
     spike.offsetY = 3
     spike.image = tilesImage.SubImage(image.Rect(192, 3, 208, 16)).(*ebiten.Image)
-    spike.onCollideY = OnCollideSpike
+    spike.onCollideUp = OnCollideSpike
 
     return spike
 }
 
-func NewLeftSpike(x, y float32) *GameObject{
-    spike := NewObject(x, y)
+func NewLeftSpike(game *Game, x, y float32) *GameObject{
+    spike := NewObject(game, x, y)
 
     spike.offsetX = 3
     spike.image = tilesImage.SubImage(image.Rect(195, 16, 208, 32)).(*ebiten.Image)
-    spike.onCollideX = OnCollideSpike
+    spike.onCollideLeft = OnCollideSpike
 
     return spike
 }
@@ -191,8 +225,7 @@ func OnCollideSpring(this, other *GameObject) bool {
 }
 
 func OnCollideSpike(this, other *GameObject) bool {
-    other.x = other.startx
-    other.y = other.starty
+    other.game.ResetAll()
     return true
 }
 
