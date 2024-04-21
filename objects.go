@@ -213,7 +213,7 @@ func NewLeftSpike(game *Game, x, y float32) *GameObject{
 
     spike.offsetX = 3
     spike.image = tilesImage.SubImage(image.Rect(195, 16, 208, 32)).(*ebiten.Image)
-    spike.onCollideLeft = OnCollideSpike
+    spike.onCollideRight = OnCollideSpike
 
     return spike
 }

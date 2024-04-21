@@ -90,7 +90,7 @@ func (tm * Tilemap) CalculateCollisions() {
 
 
 func Collide(r1 image.Rectangle, r2 image.Rectangle) bool {
-    return ! ( r2.Min.X > r1.Max.X || r2.Max.X < r1.Min.X || r2.Min.Y > r1.Max.Y || r2.Max.Y < r1.Min.Y)
+    return ! ( r2.Min.X >= r1.Max.X || r2.Max.X <= r1.Min.X || r2.Min.Y >= r1.Max.Y || r2.Max.Y <= r1.Min.Y)
 }
 
 func (t * Tilemap) Collide(x, y, width, height int) bool {
@@ -102,7 +102,7 @@ func (t * Tilemap) Collide(x, y, width, height int) bool {
     )
 
     for _, r2 := range t.collisions {
-        if ! ( r2.Min.X > r1.Max.X || r2.Max.X < r1.Min.X || r2.Min.Y > r1.Max.Y || r2.Max.Y < r1.Min.Y) {
+        if ! ( r2.Min.X >= r1.Max.X || r2.Max.X <= r1.Min.X || r2.Min.Y >= r1.Max.Y || r2.Max.Y <= r1.Min.Y) {
             return true
 
         }

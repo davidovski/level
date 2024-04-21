@@ -264,12 +264,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
         }
     }
 
-    cx, cy := ebiten.CursorPosition()
-
 	shop := &ebiten.DrawRectShaderOptions{}
 	shop.Uniforms = map[string]any{
         "Time":   float32(g.time) / 60,
-		"Cursor": []float32{float32(cx), float32(cy)},
+        "NoiseOffset":   float32(g.time) / 60,
 	}
 	shop.Images[0] = g.surface
 	shop.Images[1] = g.surface

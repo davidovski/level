@@ -5,7 +5,7 @@
 package main
 
 var Time float
-var Cursor vec2
+var NoiseOffset float
 
 const noiseX = 80.0
 const noiseY = 100.0
@@ -17,7 +17,6 @@ func rand(co vec2) float {
 }
 
 func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
-    noiseOffset := Time / 7
     col := vec4(0)
     uv := srcPos / imageSrc0Size()
 
@@ -25,7 +24,7 @@ func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
     uv.y = uv.y + (rand(vec2(Time))-0.5) / (noiseY);
 
     whiteNoise := rand(vec2(floor(uv.y*80.0),floor(uv.x*50.0))+vec2(Time,0))
-    off := 1.0 - mod(uv.y - noiseOffset, 1)
+    off := 1.0 - mod(uv.y - NoiseOffset / 7, 1)
 
     if (whiteNoise > 11.5-30.0*(off)) || whiteNoise < 1.5-2.0*(off) {
         // Sample the texture.
