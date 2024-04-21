@@ -1,24 +1,27 @@
 package main
 
 import (
+	_ "embed"
+	"fmt"
+	"image/color"
+	_ "image/png"
 	"log"
-    "image"
-    "image/color"
-    _ "embed"
-    _ "image/png"
+	"math"
 
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 const (
     screenWidth = 400
     screenHeight = 240
     tileSize = 16
-    playerSpeed = 0.2
-    jumpHeight = 0.2
+    playerSpeed = 2.1
+    jumpHeight = 3.2
     rewindSpeed = 2
+    gravity = 0.16
+    friction = 0.9
 )
 
 var (
@@ -26,13 +29,11 @@ var (
 	noneShader_src []byte
 	//go:embed shaders/vcr.kage
 	vcrShader_src []byte
-
-	//go:embed shaders/reverse.kage
-	rewindShader_src []byte
 )
 
 var (
     shaders map[string]*ebiten.Shader
+    tilesImage *ebiten.Image
 )
 
 type State int
@@ -40,6 +41,7 @@ type State int
 const (
 	IN_GAME State = iota
 	END
+	PLACING
     REVERSING
 )
 
@@ -64,6 +66,7 @@ type Game struct {
     shaderName string
     recording [][]RecPoint
     state State
+    toPlace []*GameObject
 }
 
 func (g * Game)RecordPoint() {
@@ -94,42 +97,20 @@ func (g * Game)ReplayPoint() {
     }
 }
 
-func (g * Game)InitPlayer() {
-    g.player = &GameObject{}
-
-    playerImage, _, err := ebitenutil.NewImageFromFile("Assets/Main Characters/Ninja Frog/Idle (32x32).png")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-    g.player.image = playerImage.SubImage(image.Rect(0, 0, 32, 32)).(*ebiten.Image)
-    g.objects = append(g.objects, g.player)
-
-    g.ResetPlayer()
-}
-
-func (g * Game)ResetPlayer() {
-    g.player.x = g.startPosition.x
-    g.player.y = g.startPosition.y - 0.1
-}
-
-func (g * Game)InitExit() {
-    g.exit = &GameObject{
-        x: 21,
-        y: 8,
+func (g * Game)ResetAll() {
+    for _, obj := range g.objects {
+        obj.x = obj.startx
+        obj.y = obj.starty
     }
-
-    exitImage, _, err := ebitenutil.NewImageFromFile("tiles.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-    g.exit.image = exitImage.SubImage(image.Rect(0, 16, 32, 48)).(*ebiten.Image)
-    g.objects = append(g.objects, g.exit)
 }
 
 func (g *Game) Init() {
-    g.state = IN_GAME
+    g.state = PLACING
+
+    g.toPlace = append(g.toPlace, NewBox(0, 0))
+    g.toPlace = append(g.toPlace, NewBox(0, 0))
+    g.toPlace = append(g.toPlace, NewBox(0, 0))
+    g.toPlace = append(g.toPlace, NewSpring(0, 0))
 
     g.surface = ebiten.NewImage(screenWidth, screenHeight)
     g.shaderName = "none"
@@ -154,17 +135,16 @@ func (g *Game) Init() {
 			},
 		}, 25)
 
-    g.startPosition = &GameObject{
-        x: 4,
-        y: 8,
-    }
-
     g.tilemap = &tilemap
 
     g.tilemap.UpdateSurface()
 
-    g.InitPlayer()
-    g.InitExit()
+    g.player = NewPlayer(4 * tileSize, 8 * tileSize)
+    g.objects = append(g.objects, g.player)
+    g.exit = NewExit(21 * tileSize, 8 * tileSize)
+    g.objects = append(g.objects, g.exit)
+
+    g.ResetAll()
 
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
@@ -182,28 +162,30 @@ func (g *Game) Update() error {
         if g.state == REVERSING {
             g.state = IN_GAME
             g.shaderName = "none"
-        } else  {
+        }
+
+        if g.state == IN_GAME {
             g.state = REVERSING
             g.shaderName = "vcr"
         }
 
     }
 
-    if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
-        g.player.vx = -playerSpeed
-    }
-
-    if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
-        g.player.vx = playerSpeed
-    }
-
-    if g.player.onGround && (ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyUp)) {
-        g.player.vy = -jumpHeight
-    }
-
     if g.state == IN_GAME {
+        if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
+            g.player.vx = -playerSpeed
+        }
+
+        if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
+            g.player.vx = playerSpeed
+        }
+
+        if g.player.onGround && (ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyUp)) {
+            g.player.vy += -jumpHeight
+        }
+
         for _, obj := range g.objects {
-            obj.Update(*g.tilemap)
+            obj.Update(*g.tilemap, g.objects)
         }
 
         g.tilemap.Update()
@@ -216,7 +198,36 @@ func (g *Game) Update() error {
         }
     }
 
+    if g.state == PLACING {
+        if len(g.toPlace) > 0 {
+            cx, cy := ebiten.CursorPosition()
+            cx = int(math.Floor(float64(cx)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
+            cy = int(math.Floor(float64(cy)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
+
+            g.toPlace[0].x = float32(cx)
+            g.toPlace[0].y = float32(cy)
+
+            if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
+                g.PlaceObject(cx, cy)
+            }
+        }
+    }
+
     return nil
+}
+
+func (g *Game)PlaceObject(cx, cy int) {
+        g.toPlace[0].startx = float32(cx)
+        g.toPlace[0].starty = float32(cy)
+
+        g.objects = append(g.objects, g.toPlace[0])
+
+        g.toPlace = g.toPlace[1:len(g.toPlace)]
+
+        if len(g.toPlace) == 0 {
+            g.ResetAll()
+            g.state = IN_GAME
+        }
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -233,6 +244,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
         obj.Draw(g.surface, *g.tilemap)
     }
 
+    if g.state == PLACING {
+        if len(g.toPlace) > 0 {
+            g.toPlace[0].Draw(g.surface, *g.tilemap)
+        }
+    }
+
     cx, cy := ebiten.CursorPosition()
 
 	shop := &ebiten.DrawRectShaderOptions{}
@@ -246,6 +263,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	shop.Images[3] = g.surface
 	screen.DrawRectShader(screenWidth, screenHeight, shaders[g.shaderName], shop)
 
+    ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
     //screen.DrawImage(surface, &ebiten.DrawImageOptions{})
 }
 
@@ -274,6 +292,12 @@ func LoadShaders() error {
 
 func main() {
     LoadShaders()
+
+    var err error
+    tilesImage, _, err = ebitenutil.NewImageFromFile("tiles.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	ebiten.SetWindowTitle("Hello, World!")
     game := &Game{}

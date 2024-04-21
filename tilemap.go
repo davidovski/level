@@ -5,7 +5,6 @@ import (
     "log"
     "image"
     _ "image/png"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 
 )
 
@@ -64,7 +63,7 @@ func NewTilemap(layers [][]int, mapWidth int) Tilemap {
     tilemap.surface = ebiten.NewImage(mapWidth*tilemap.tileSize, len(layers[0])/mapWidth*tilemap.tileSize)
 
     var err error
-	tilemap.tilesImage, _, err = ebitenutil.NewImageFromFile("tiles.png")
+	tilemap.tilesImage = tilesImage
 
 	if err != nil {
 		log.Fatal(err)
@@ -89,6 +88,11 @@ func (tm * Tilemap) CalculateCollisions() {
     }
 }
 
+
+func Collide(r1 image.Rectangle, r2 image.Rectangle) bool {
+    return ! ( r2.Min.X > r1.Max.X || r2.Max.X < r1.Min.X || r2.Min.Y > r1.Max.Y || r2.Max.Y < r1.Min.Y)
+}
+
 func (t * Tilemap) Collide(x, y, width, height int) bool {
     r1 :=  image.Rect(
         x,
@@ -111,8 +115,8 @@ func (t * Tilemap) Collide(x, y, width, height int) bool {
 func (t * Tilemap) CollideObject(object *GameObject) bool {
     width := object.image.Bounds().Dx()
     height := object.image.Bounds().Dy()
-    x := int(object.x*float32(t.tileSize))
-    y := int(object.y*float32(t.tileSize))
+    x := int(object.x)
+    y := int(object.y)
     return t.Collide(x, y, width, height)
 }
 

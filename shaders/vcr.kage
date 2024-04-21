@@ -1,0 +1,44 @@
+//go:build ignore
+
+//kage:unit pixels
+
+package main
+
+var Time float
+var Cursor vec2
+
+const noiseX = 80.0
+const noiseY = 100.0
+
+const colorOffsetIntensity = 1.2
+
+func rand(co vec2) float {
+    return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+}
+
+func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
+    noiseOffset := Time / 7
+    col := vec4(0)
+    uv := srcPos / imageSrc0Size()
+
+    uv.x = uv.x + (rand(vec2(Time,srcPos.y)) - 0.5) / (noiseX); 
+    uv.y = uv.y + (rand(vec2(Time))-0.5) / (noiseY);
+
+    whiteNoise := rand(vec2(floor(uv.y*80.0),floor(uv.x*50.0))+vec2(Time,0))
+    off := 1.0 - mod(uv.y - noiseOffset, 1)
+
+    if (whiteNoise > 11.5-30.0*(off)) || whiteNoise < 1.5-2.0*(off) {
+        // Sample the texture.
+
+        offsetR := vec2(0.006 * sin(Time), 0.0) * colorOffsetIntensity;
+        offsetG := vec2(0.0073 * (cos(Time * 0.97)), 0.0) * colorOffsetIntensity;
+        r := imageSrc0UnsafeAt((uv+offsetR) * imageSrc0Size()).r
+        g := imageSrc0UnsafeAt((uv+offsetG) * imageSrc0Size()).g
+        b := imageSrc0UnsafeAt(uv * imageSrc0Size()).b
+        return vec4(r, g, b, 1.0)
+    } else {
+    	col = imageSrc2UnsafeAt(uv * imageSrc0Size());
+        return col + vec4(0.8);
+    }
+
+}
