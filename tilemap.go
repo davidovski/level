@@ -56,7 +56,7 @@ func (tm *Tilemap) UpdateSurface() {
 func NewTilemap(layers [][]int, mapWidth int) Tilemap {
     tilemap := Tilemap{
         tileSize: 16,
-        mapWidth: 15,
+        mapWidth: 25,
     }
 
     tilemap.layers = layers
@@ -64,7 +64,7 @@ func NewTilemap(layers [][]int, mapWidth int) Tilemap {
     tilemap.surface = ebiten.NewImage(mapWidth*tilemap.tileSize, len(layers[0])/mapWidth*tilemap.tileSize)
 
     var err error
-	tilemap.tilesImage, _, err = ebitenutil.NewImageFromFile("Assets/Terrain/Terrain (16x16).png")
+	tilemap.tilesImage, _, err = ebitenutil.NewImageFromFile("tiles.png")
 
 	if err != nil {
 		log.Fatal(err)
@@ -76,7 +76,7 @@ func NewTilemap(layers [][]int, mapWidth int) Tilemap {
 }
 
 func (tm * Tilemap) CalculateCollisions() {
-    for i, t := range tm.layers[1] {
+    for i, t := range tm.layers[0] {
         if t != 0 {
             x := i%tm.mapWidth * tm.tileSize
             y := i/tm.mapWidth * tm.tileSize

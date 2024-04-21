@@ -36,7 +36,6 @@ func (o * GameObject) Update(tilemap Tilemap) {
         o.onGround = true;
         o.vx *= friction
 
-
         o.y -= o.vy
         o.vy = 0
     } else {
