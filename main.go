@@ -44,6 +44,9 @@ var (
 	//go:embed shaders/vcr.kage
 	vcrShader_src []byte
 
+	//go:embed shaders/clouds.kage
+	cloudShader_src []byte
+
 	//go:embed assets/tiles.png
 	tilesPng_src []byte
 
@@ -146,6 +149,7 @@ func (g * Game)ReplayPoint() {
         obj.vy = point.vy
         obj.alpha = point.alpha
     }
+    g.time -=1
 }
 
 func (g * Game)ResetPlayerAi() {
@@ -205,7 +209,7 @@ func (g * Game) ResetAll() {
 
 func (g *Game) Init() {
     g.surface = ebiten.NewImage(screenWidth, screenHeight)
-    g.shaderName = "none"
+    g.shaderName = "sky"
 
     g.player = NewPlayer(g, 4 * tileSize, 9 * tileSize)
     g.objects = append(g.objects, g.player)
@@ -281,6 +285,7 @@ func (g *Game) Update() error {
     }
 
     if g.state == REVERSING {
+        g.time -= 1
         for x := 0; x < rewindSpeed; x++ {
             g.ReplayPoint()
         }
@@ -364,9 +369,18 @@ func (g *Game) PlaceObject(cx, cy int) {
 
 }
 
+func DrawBackground(screen *ebiten.Image, time int)  {
+	shop := &ebiten.DrawRectShaderOptions{}
+	shop.Uniforms = map[string]any{
+        "Time":   float32(time) / 60,
+	}
+	screen.DrawRectShader(screenWidth, screenHeight, shaders["sky"], shop)
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 
     g.surface.Fill(color.Alpha16{0x9ccf})
+    DrawBackground(g.surface, g.time)
 
     op := &ebiten.DrawImageOptions{}
     op.GeoM.Translate(float64(g.offsetX), float64(g.offsetY))
@@ -406,7 +420,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	shop.Images[3] = g.surface
 	screen.DrawRectShader(screenWidth, screenHeight, shaders[g.shaderName], shop)
 
-    //ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
+    ebitenutil.DebugPrint(screen, fmt.Sprintf("shader: %s", g.shaderName))
     //screen.DrawImage(surface, &ebiten.DrawImageOptions{})
 }
 
@@ -430,6 +444,10 @@ func LoadShaders() error {
         return err
     }
 
+    shaders["sky"], err = ebiten.NewShader([]byte(cloudShader_src))
+    if err != nil {
+        return err
+    }
     return nil
 }
 func (g *Game) KillPlayer() {
@@ -563,8 +581,10 @@ func (g *Game) LoadImages() {
 }
 
 func main() {
-    LoadShaders()
-
+    err := LoadShaders()
+	if err != nil {
+		log.Fatal(err)
+	}
 	ebiten.SetWindowTitle("Hello, World!")
     game := &Game{}
     game.LoadAudio()
