@@ -436,10 +436,10 @@ func (g *Game) IsShowTheEnd() bool {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 
-    g.surface.Fill(color.Alpha16{0x9ccf})
-    DrawBackground(g.surface, g.time)
+    DrawBackground(screen, g.time)
 
-    g.tilemap.Draw(g.surface, float32(g.offsetX), float32(g.offsetY-2))
+    g.surface.Fill(color.RGBA{0, 0, 0, 0})
+    g.tilemap.Draw(g.surface, 0, -2)
 
     for i := len(g.objects)-1; i >= 0; i-- {
         obj := g.objects[i]
@@ -453,25 +453,25 @@ func (g *Game) Draw(screen *ebiten.Image) {
     }
 
     op := &ebiten.DrawImageOptions{}
+    op.GeoM.Translate(float64(g.offsetX), float64(g.offsetY-2))
     if g.IsShowTheEnd() {
 
         // draw THE END
-        a :=  float32(endCardDuration - (g.time - g.animStart)) / float32(endCardDuration);
-        a = float32(math.Pow(float64(a), 10))
+        a :=  float64(endCardDuration - (g.time - g.animStart)) / float64(endCardDuration);
+        a = 1 - float64(math.Pow(float64(a), 10))
 
         if g.state == PAUSED {
+            a = 10.0
+        }
+
+        if a < 0.0 {
             a = 0.0
         }
 
-        if a > 1.0 {
-            a = 1.0
-        }
+        op.GeoM.Translate(float64(g.offsetX), float64(g.offsetY) + a*screenHeight/2)
 
-        fmt.Printf("alpha: %.4f\n", a)
-
-        op.ColorScale.Scale(a, a, a, 1);
         screen.DrawImage(g.surface, op)
-        g.DrawTheEnd(screen, 1-a)
+        g.DrawTheEnd(screen, float32(a))
 
         // AFTER THE END
         if g.state == END && g.time - g.animStart  > endCardDuration {
