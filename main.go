@@ -26,6 +26,10 @@ const (
     gravity = 0.16
     friction = 0.75
     airResistance = 0.98
+
+    exitTransitionWeight = 0.9
+    ghostAlpha = 0.5
+    hightlightBorder = 2
 )
 
 var (
@@ -54,6 +58,7 @@ type RecPoint struct {
     y float32
     vx float32
     vy float32
+    alpha float32
 }
 
 
@@ -86,9 +91,27 @@ func (g * Game)RecordPoint() {
             y: object.y,
             vx: object.vx,
             vy: object.vy,
+            alpha: object.alpha,
         })
     }
     g.recording = append(g.recording, points)
+}
+
+func (g * Game)ReplayPoint() {
+    if len(g.recording) == 0 {
+        return
+    }
+
+    var points []RecPoint
+    points, g.recording = g.recording[len(g.recording)-1], g.recording[:len(g.recording)-1]
+    for i, point := range points {
+        obj := g.objects[i]
+        obj.x = point.x
+        obj.y = point.y
+        obj.vx = point.vx
+        obj.vy = point.vy
+        obj.alpha = point.alpha
+    }
 }
 
 func (g * Game)ResetPlayerAi() {
@@ -97,6 +120,7 @@ func (g * Game)ResetPlayerAi() {
     g.player.y = g.player.starty
     g.player.vx = 0
     g.player.vy = 0
+    g.player.alpha = ghostAlpha
 }
 
 func (g * Game)ReplayPlayerAi() {
@@ -129,20 +153,10 @@ func (g * Game)ReplayPlayerAi() {
     }
 
 }
-
-func (g * Game)ReplayPoint() {
-    if len(g.recording) == 0 {
-        return
-    }
-
-    var points []RecPoint
-    points, g.recording = g.recording[len(g.recording)-1], g.recording[:len(g.recording)-1]
-    for i, point := range points {
-        g.objects[i].x = point.x
-        g.objects[i].y = point.y
-        g.objects[i].vx = point.vx
-        g.objects[i].vy = point.vy
-    }
+func (g * Game) ClearAll() {
+    g.objects = g.objects[:0]
+    g.objects = append(g.objects, g.player)
+    g.objects = append(g.objects, g.exit)
 }
 
 func (g * Game) ResetAll() {
@@ -158,30 +172,6 @@ func (g * Game) ResetAll() {
 func (g *Game) Init() {
     g.surface = ebiten.NewImage(screenWidth, screenHeight)
     g.shaderName = "none"
-    tilemap := NewTilemap([][]int{
-            {
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 0,
-                0, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 0,
-                0, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			},
-		}, 25)
-
-    g.tilemap = &tilemap
-
-    g.tilemap.UpdateSurface()
 
     g.player = NewPlayer(g, 4 * tileSize, 9 * tileSize)
     g.objects = append(g.objects, g.player)
@@ -203,7 +193,7 @@ func (g *Game) Init() {
 func (g *Game) Update() error {
     g.time += 1
 
-    //if ebiten.IsKeyPressed(ebiten.KeyR) {
+    //if ebiten.IsKeyJustPressed(ebiten.KeyR) {
     //    if g.state == IN_GAME {
     //        g.state = REVERSING
     //        g.shaderName = "vcr"
@@ -216,6 +206,16 @@ func (g *Game) Update() error {
     //}
 
     if g.state == IN_GAME {
+        if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+            g.SetReversing()
+            next := func (g *Game){
+                g.SetInGame()
+                g.recording = g.recording[:0]
+                g.playerAi = g.playerAi[:0]
+            }
+            g.whenStateFinished = append([]func(*Game){next}, g.whenStateFinished...)
+        }
+
         var currentState [3]bool
         if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
             g.player.MoveLeft()
@@ -259,29 +259,7 @@ func (g *Game) Update() error {
     }
 
     if g.state == PLACING {
-
-        for _, obj := range g.objects {
-            obj.Update(*g.tilemap, g.objects)
-        }
-
-        g.tilemap.Update()
-        g.ReplayPlayerAi()
-
-        cx, cy := ebiten.CursorPosition()
-
-        if len(g.toPlace) > 0 {
-            placeable := g.toPlace[0]
-            cx = int(math.Floor(float64(cx)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
-            cy = int(math.Floor(float64(cy)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
-
-            cx += placeable.offsetX
-            cy += placeable.offsetY
-            placeable.x = float32(cx)
-            placeable.y = float32(cy)
-        }
-        if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
-            g.PlaceObject(cx, cy)
-        }
+        g.UpdatePlacing()
     }
     if g.player.y > screenHeight {
         g.KillPlayer()
@@ -289,6 +267,37 @@ func (g *Game) Update() error {
 
 
     return nil
+}
+
+func (g *Game) UpdatePlacing() {
+    for _, obj := range g.objects {
+        obj.Update(*g.tilemap, g.objects)
+    }
+
+    g.tilemap.Update()
+    g.ReplayPlayerAi()
+
+    cx, cy := ebiten.CursorPosition()
+
+    for _, object := range g.objects {
+        object.highlight = object.CollidePoint(float32(cx), float32(cy)) && object.movable && len(g.toPlace) == 0
+    }
+
+    if len(g.toPlace) > 0 {
+        placeable := g.toPlace[0]
+        cx = int(math.Floor(float64(cx)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
+        cy = int(math.Floor(float64(cy)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
+
+        cx += placeable.offsetX
+        cy += placeable.offsetY
+        placeable.x = float32(cx)
+        placeable.y = float32(cy)
+        placeable.alpha = float32(math.Abs(math.Sin(float64(g.time) / 30.0)))
+    }
+
+    if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
+        g.PlaceObject(cx, cy)
+    }
 }
 
 func (g *Game) PlaceObject(cx, cy int) {
@@ -310,10 +319,16 @@ func (g *Game) PlaceObject(cx, cy int) {
 
         placeable.startx = float32(cx)
         placeable.starty = float32(cy)
+        placeable.highlight = false
+        placeable.alpha = 1.0
 
         g.objects = append(g.objects, placeable)
 
         g.toPlace = g.toPlace[1:len(g.toPlace)]
+
+        if len(g.toPlace) == 0 && len(g.playerAi) == 0 {
+            g.TransitionState()
+        }
 
 }
 
@@ -338,6 +353,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
     }
 
     if g.state == END {
+
         // draw THE END
         ebitenutil.DebugPrint(screen, fmt.Sprintf("THE END %d", g.time - g.animStart))
 
@@ -398,7 +414,7 @@ func (g *Game) KillPlayer() {
         if len(g.toPlace) == 0 {
             g.ResetAll()
             g.playerAi = g.playerAi[:0]
-            g.state = IN_GAME
+            g.SetInGame()
 
             for _, o := range g.objects {
                 o.movable = false
@@ -411,7 +427,8 @@ func (g *Game) EndLevel() {
     if g.state == IN_GAME {
         g.state = END
         g.TransitionState()
-    } else {
+    } 
+    if g.state == PLACING {
         g.ResetPlayerAi()
     }
 }
@@ -432,6 +449,24 @@ func (g *Game)RemoveObject(obj *GameObject) {
         g.objects[j] = nil
     }
     g.objects = g.objects[:i]
+}
+
+func (g *Game) SetReversing() {
+    g.state = REVERSING
+    g.shaderName = "vcr"
+    g.player.alpha = 1.0
+}
+
+func (g *Game) SetInGame() {
+    g.state = IN_GAME
+    g.shaderName = "none"
+    g.player.alpha = 1.0
+}
+
+func (g *Game) SetPlacing() {
+    g.state = PLACING
+    g.shaderName = "none"
+    g.player.alpha = ghostAlpha
 }
 
 func main() {

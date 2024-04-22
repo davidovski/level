@@ -1,16 +1,17 @@
 package main
 
 import (
+	"image"
+	"image/color"
 	"log"
-    "image"
-    "image/color"
-    "github.com/hajimehoshi/ebiten/v2"
-    "github.com/hajimehoshi/ebiten/v2/vector"
+
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
-    SPRING_FORCE = 8
+    SPRING_FORCE = 10
 )
 
 type Direction int
@@ -30,6 +31,8 @@ type GameObject struct {
     vx, vy float32
 
     offsetX, offsetY int
+    alpha float32
+    highlight bool
 
     friction float32
     resistance float32
@@ -88,16 +91,20 @@ func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
 func GetObjectAt(objects []*GameObject, x, y float32) *GameObject {
 
     for _, object := range objects {
-        maxX := object.x + float32(object.image.Bounds().Dx())
-        maxY := object.y + float32(object.image.Bounds().Dy())
-        minX := object.x
-        minY := object.y
-        if x >= minX && x < maxX && y >= minY && y < maxY {
+        if object.CollidePoint(x, y) {
             return object
         }
     }
     return nil
 }
+
+func (object * GameObject) CollidePoint(x, y float32) bool {
+        maxX := object.x + float32(object.image.Bounds().Dx())
+        maxY := object.y + float32(object.image.Bounds().Dy())
+        minX := object.x
+        minY := object.y
+        return x >= minX && x < maxX && y >= minY && y < maxY
+    }
 
 func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, dir Direction) bool {
     if tilemap.CollideObject(o) {
@@ -128,12 +135,12 @@ func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, dir Di
 
 func (o * GameObject) Draw(screen *ebiten.Image, tilemap Tilemap) {
     op := &ebiten.DrawImageOptions{}
+    op.ColorScale.ScaleAlpha(o.alpha)
     op.GeoM.Translate(float64(o.x), float64(o.y))
     screen.DrawImage(o.image, op)
 
-    
-    if o.movable {
-        vector.StrokeRect(screen, o.x, o.y, float32(o.image.Bounds().Dx()), float32(o.image.Bounds().Dy()), 2, color.RGBA{255, 100, 100, 255}, false)
+    if o.highlight {
+        vector.StrokeRect(screen, o.x, o.y, float32(o.image.Bounds().Dx()), float32(o.image.Bounds().Dy()), hightlightBorder, color.RGBA{255, 100, 100, 255}, false)
     }
 
 
@@ -184,18 +191,18 @@ func OnCollideGeneric(this, other *GameObject) bool {
 }
 
 func NewObject(game *Game, x, y float32) *GameObject{
-    obj := &GameObject{
+    return &GameObject{
         game: game,
         startx: x,
         starty: y,
+        alpha: 1.0,
+        highlight: false,
+        friction: friction,
+        resistance: airResistance,
+        x: x,
+        y: y,
+        movable: true,
     }
-
-    obj.friction = friction
-    obj.resistance = airResistance
-    obj.x = obj.startx
-    obj.y = obj.starty
-    obj.movable = true
-    return obj
 }
 
 func NewPlayer(game *Game, x, y float32) *GameObject{
@@ -264,7 +271,14 @@ func NewLeftSpike(game *Game, x, y float32) *GameObject{
 
 func OnCollideExit(this, other *GameObject) bool {
     if other == this.game.player {
-        this.game.EndLevel()
+        g := other.game
+        g.player.x = (exitTransitionWeight)*g.player.x + (1-exitTransitionWeight)*g.exit.x
+        g.player.y = (exitTransitionWeight)*g.player.y + (1-exitTransitionWeight)*g.exit.y
+        g.player.alpha *= exitTransitionWeight
+
+        if g.player.alpha < 0.001 {
+            g.EndLevel()
+        }
     }
     return false
 }
