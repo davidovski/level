@@ -15,6 +15,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
+	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
 )
 
 
@@ -64,8 +65,8 @@ var (
 	//go:embed assets/start.wav
 	startWav_src []byte
 
-	//go:embed assets/ambient.wav
-	ambientWav_src []byte
+	//go:embed assets/ambient.ogg
+	ambientOgg_src []byte
 )
 
 var (
@@ -551,6 +552,21 @@ func (g *Game) SetPlacing() {
     g.StopRewinding()
 }
 
+func loadAudioVorbis(oggFile []byte, audioContext *audio.Context) *audio.Player {
+
+    var err error
+    sound, err := vorbis.DecodeWithoutResampling(bytes.NewReader(oggFile))
+    if err != nil {
+        return nil
+    }
+
+    p, err := audioContext.NewPlayer(sound)
+
+    if err != nil {
+        return nil
+    }
+    return p
+}
 func loadAudio(wavFile []byte, audioContext *audio.Context) *audio.Player {
 
     var err error
@@ -574,7 +590,7 @@ func (g *Game) LoadAudio() {
     g.audioPlayer.rewindAudio = loadAudio(rewindWav_src, g.audioPlayer.audioContext)
     g.audioPlayer.stopAudio = loadAudio(stopWav_src, g.audioPlayer.audioContext)
     g.audioPlayer.startAudio = loadAudio(startWav_src, g.audioPlayer.audioContext)
-    g.audioPlayer.ambientAudio = loadAudio(ambientWav_src, g.audioPlayer.audioContext)
+    g.audioPlayer.ambientAudio = loadAudioVorbis(ambientOgg_src, g.audioPlayer.audioContext)
 
     if g.audioPlayer.ambientAudio == nil {
         fmt.Printf("AUDIO NUL")
