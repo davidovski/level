@@ -33,6 +33,7 @@ const (
     exitTransitionWeight = 0.9
     ghostAlpha = 0.5
     hightlightBorder = 2
+    audioFadeIn = 0.999
 
     sampleRate = 44100
 )
@@ -57,6 +58,9 @@ var (
 
 	//go:embed assets/start.wav
 	startWav_src []byte
+
+	//go:embed assets/ambient.wav
+	ambientWav_src []byte
 )
 
 var (
@@ -87,6 +91,7 @@ type AudioPlayer struct {
     rewindAudio  *audio.Player
     stopAudio  *audio.Player
     startAudio  *audio.Player
+    ambientAudio  *audio.Player
 }
 
 type Game struct {
@@ -209,6 +214,7 @@ func (g *Game) Init() {
 
     g.ResetAll()
     StartLevel1(g)
+    g.audioPlayer.ambientAudio.SetVolume(0)
 
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
@@ -221,6 +227,16 @@ func (g *Game) Init() {
 
 func (g *Game) Update() error {
     g.time += 1
+
+
+    if g.state == IN_GAME || g.state == PLACING {
+        if ! g.audioPlayer.ambientAudio.IsPlaying() {
+            g.audioPlayer.ambientAudio.Play()
+        }
+        volume := g.audioPlayer.ambientAudio.Volume()
+        volume = 1-((1-volume)*audioFadeIn)
+        g.audioPlayer.ambientAudio.SetVolume(volume)
+    }
 
     if g.state == IN_GAME {
         if inpututil.IsKeyJustPressed(ebiten.KeyR) {
@@ -443,7 +459,7 @@ func (g *Game) EndLevel() {
     if g.state == IN_GAME {
         g.state = END
         g.TransitionState()
-    } 
+    }
     if g.state == PLACING {
         g.ResetPlayerAi()
     }
@@ -473,6 +489,7 @@ func (g *Game) SetReversing() {
     g.player.alpha = 1.0
     g.audioPlayer.rewindAudio.Rewind()
     g.audioPlayer.rewindAudio.Play()
+    g.audioPlayer.ambientAudio.Pause()
 }
 
 func (g *Game) StopRewinding() {
@@ -481,6 +498,7 @@ func (g *Game) StopRewinding() {
         g.audioPlayer.rewindAudio.Pause()
         g.audioPlayer.startAudio.Rewind()
         g.audioPlayer.startAudio.Play()
+        g.audioPlayer.ambientAudio.Play()
     }
 
 }
@@ -520,6 +538,11 @@ func (g *Game) LoadAudio() {
     g.audioPlayer.rewindAudio = loadAudio(rewindWav_src, g.audioPlayer.audioContext)
     g.audioPlayer.stopAudio = loadAudio(stopWav_src, g.audioPlayer.audioContext)
     g.audioPlayer.startAudio = loadAudio(startWav_src, g.audioPlayer.audioContext)
+    g.audioPlayer.ambientAudio = loadAudio(ambientWav_src, g.audioPlayer.audioContext)
+
+    if g.audioPlayer.ambientAudio == nil {
+        fmt.Printf("AUDIO NUL")
+    }
 }
 
 func (g *Game) LoadImages() {
@@ -537,12 +560,10 @@ func (g *Game) LoadImages() {
 	}
 
     tilesImage = ebiten.NewImageFromImage(img)
-
 }
 
 func main() {
     LoadShaders()
-
 
 	ebiten.SetWindowTitle("Hello, World!")
     game := &Game{}
