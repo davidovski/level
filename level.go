@@ -140,6 +140,7 @@ func StartLevel4(g *Game) {
 func StartLevel5(g *Game) {
     g.SetPlacing()
     g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
+    g.exit.movable = true
 
     // after end
     g.QueueState(ReverseLevel)
