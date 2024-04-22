@@ -31,7 +31,7 @@ func levelStart(g *Game) {
 }
 
 func StartGame(g *Game) {
-    StartLevel4(g)
+    StartLevel1(g)
 }
 
 func StartLevel1(g *Game ) {
