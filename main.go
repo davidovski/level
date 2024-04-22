@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
+	"image"
 	"image/color"
 	_ "image/png"
 	"log"
@@ -11,7 +13,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-
+	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 )
 
 
@@ -30,6 +33,8 @@ const (
     exitTransitionWeight = 0.9
     ghostAlpha = 0.5
     hightlightBorder = 2
+
+    sampleRate = 44100
 )
 
 var (
@@ -37,11 +42,27 @@ var (
 	noneShader_src []byte
 	//go:embed shaders/vcr.kage
 	vcrShader_src []byte
+
+	//go:embed assets/tiles.png
+	tilesPng_src []byte
+
+	//go:embed assets/character.png
+	characterPng_src []byte
+
+	//go:embed assets/rewind.wav
+	rewindWav_src []byte
+
+	//go:embed assets/stop.wav
+	stopWav_src []byte
+
+	//go:embed assets/start.wav
+	startWav_src []byte
 )
 
 var (
     shaders map[string]*ebiten.Shader
     tilesImage *ebiten.Image
+    characterImage *ebiten.Image
 )
 
 type State int
@@ -61,6 +82,12 @@ type RecPoint struct {
     alpha float32
 }
 
+type AudioPlayer struct {
+    audioContext *audio.Context
+    rewindAudio  *audio.Player
+    stopAudio  *audio.Player
+    startAudio  *audio.Player
+}
 
 type Game struct {
     surface *ebiten.Image
@@ -81,6 +108,8 @@ type Game struct {
 
     playerAi [][3]bool
     playerAiIdx int
+
+    audioPlayer *AudioPlayer
 }
 
 func (g * Game)RecordPoint() {
@@ -193,18 +222,6 @@ func (g *Game) Init() {
 func (g *Game) Update() error {
     g.time += 1
 
-    //if ebiten.IsKeyJustPressed(ebiten.KeyR) {
-    //    if g.state == IN_GAME {
-    //        g.state = REVERSING
-    //        g.shaderName = "vcr"
-    //    }
-    //} else {
-    //    if g.state == REVERSING {
-    //        g.state = IN_GAME
-    //        g.shaderName = "none"
-    //    }
-    //}
-
     if g.state == IN_GAME {
         if inpututil.IsKeyJustPressed(ebiten.KeyR) {
             g.SetReversing()
@@ -254,7 +271,6 @@ func (g *Game) Update() error {
 
         if len(g.recording) == 0 {
             g.TransitionState()
-            fmt.Printf("end of recording state transition\n")
         }
     }
 
@@ -443,7 +459,7 @@ func (g *Game)RemoveObject(obj *GameObject) {
             i++
         }
     }
-    // Prevent memory leak by erasing truncated values 
+    // Prevent memory leak by erasing truncated values
     // (not needed if values don't contain pointers, directly or indirectly)
     for j := i; j < len(g.objects); j++ {
         g.objects[j] = nil
@@ -455,31 +471,83 @@ func (g *Game) SetReversing() {
     g.state = REVERSING
     g.shaderName = "vcr"
     g.player.alpha = 1.0
+    g.audioPlayer.rewindAudio.Rewind()
+    g.audioPlayer.rewindAudio.Play()
+}
+
+func (g *Game) StopRewinding() {
+    g.shaderName = "none"
+    if g.audioPlayer.rewindAudio.IsPlaying() {
+        g.audioPlayer.rewindAudio.Pause()
+        g.audioPlayer.startAudio.Rewind()
+        g.audioPlayer.startAudio.Play()
+    }
+
 }
 
 func (g *Game) SetInGame() {
     g.state = IN_GAME
-    g.shaderName = "none"
     g.player.alpha = 1.0
+    g.StopRewinding()
 }
 
 func (g *Game) SetPlacing() {
     g.state = PLACING
-    g.shaderName = "none"
     g.player.alpha = ghostAlpha
+    g.StopRewinding()
+}
+
+func loadAudio(wavFile []byte, audioContext *audio.Context) *audio.Player {
+
+    var err error
+    sound, err := wav.DecodeWithoutResampling(bytes.NewReader(wavFile))
+    if err != nil {
+        return nil
+    }
+
+    p, err := audioContext.NewPlayer(sound)
+
+    if err != nil {
+        return nil
+    }
+    return p
+}
+
+func (g *Game) LoadAudio() {
+    g.audioPlayer = &AudioPlayer{}
+
+    g.audioPlayer.audioContext = audio.NewContext(sampleRate)
+    g.audioPlayer.rewindAudio = loadAudio(rewindWav_src, g.audioPlayer.audioContext)
+    g.audioPlayer.stopAudio = loadAudio(stopWav_src, g.audioPlayer.audioContext)
+    g.audioPlayer.startAudio = loadAudio(startWav_src, g.audioPlayer.audioContext)
+}
+
+func (g *Game) LoadImages() {
+
+    img, _, err := image.Decode(bytes.NewReader(characterPng_src))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+    characterImage = ebiten.NewImageFromImage(img)
+
+    img, _, err = image.Decode(bytes.NewReader(tilesPng_src))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+    tilesImage = ebiten.NewImageFromImage(img)
+
 }
 
 func main() {
     LoadShaders()
 
-    var err error
-    tilesImage, _, err = ebitenutil.NewImageFromFile("assets/tiles.png")
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	ebiten.SetWindowTitle("Hello, World!")
     game := &Game{}
+    game.LoadAudio()
+    game.LoadImages()
     game.Init()
 
 	if err := ebiten.RunGame(game); err != nil {

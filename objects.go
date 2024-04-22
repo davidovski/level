@@ -3,10 +3,8 @@ package main
 import (
 	"image"
 	"image/color"
-	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
@@ -130,6 +128,7 @@ func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, dir Di
             return f(obj, o)
         }
     }
+
     return false
 }
 
@@ -142,8 +141,6 @@ func (o * GameObject) Draw(screen *ebiten.Image, tilemap Tilemap) {
     if o.highlight {
         vector.StrokeRect(screen, o.x, o.y, float32(o.image.Bounds().Dx()), float32(o.image.Bounds().Dy()), hightlightBorder, color.RGBA{255, 100, 100, 255}, false)
     }
-
-
 }
 
 func (object * GameObject) Collide(other *GameObject) bool {
@@ -208,10 +205,7 @@ func NewObject(game *Game, x, y float32) *GameObject{
 func NewPlayer(game *Game, x, y float32) *GameObject{
     player := NewObject(game, x, y)
 
-    playerImage, _, err := ebitenutil.NewImageFromFile("assets/character.png")
-	if err != nil {
-		log.Fatal(err)
-	}
+    playerImage := ebiten.NewImageFromImage(characterImage)
 
     player.image = playerImage.SubImage(image.Rect(4, 8, 27, 32)).(*ebiten.Image)
 
