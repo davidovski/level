@@ -13,6 +13,7 @@ const cloudlight = 0.3
 const cloudcover = 0.2
 const cloudalpha = 8.0
 const skytint = 0.5
+const colorDepth = 64
 
 func rand(co vec2) float {
     return fract(sin(dot(co.xy, vec2(12.9898,-78.233))) * 43758.5453)
@@ -59,10 +60,11 @@ func fbm(n vec2) float {
 
 func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
     m := mat2(1.6,  1.2, -1.2,  1.6)
-    skycolour1 := vec3(0.45, 0.57, 0.66)
-    skycolour2 := vec3(0.55, 0.77, 0.86)
+    skycolour := vec3(0.68, 0.81, 0.86)
+    //skycolour2 := vec3(0.55, 0.77, 0.86)
 
-    p := srcPos.xy / imageSrc0Size().xy;
+    p := floor(srcPos.xy) / imageSrc0Size().xy;
+
 	uv := p*vec2(imageSrc0Size().x/imageSrc0Size().y,1.0);    
     time := Time * speed
     q := fbm(uv * cloudscale * 0.5)
@@ -120,12 +122,13 @@ func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
 	
     c += c1
 
-    skycolour := mix(skycolour2, skycolour1, p.y);
+    //skycolour := mix(skycolour2, skycolour1, 0);
     cloudcolour := vec3(1.1, 1.1, 0.9) * clamp((clouddark + cloudlight*c), 0.0, 1.0);
    
     f = cloudcover + cloudalpha*f*r;
     
     result := mix(skycolour, clamp(skytint * skycolour + cloudcolour, 0.0, 1.0), clamp(f + c, 0.0, 1.0));
+    result = floor(result*colorDepth)/colorDepth
     
 	return vec4( result, 1.0 );
 }

@@ -40,6 +40,7 @@ type GameObject struct {
     onCollideDown func(this, other *GameObject) bool
     onCollideLeft func(this, other *GameObject) bool
     onCollideRight func(this, other *GameObject) bool
+    Draw func (o * GameObject, screen *ebiten.Image, tilemap Tilemap)
     movable bool
 }
 
@@ -132,7 +133,7 @@ func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, dir Di
     return false
 }
 
-func (o * GameObject) Draw(screen *ebiten.Image, tilemap Tilemap) {
+func DrawObject(o * GameObject, screen *ebiten.Image, tilemap Tilemap) {
     op := &ebiten.DrawImageOptions{}
     op.ColorScale.ScaleAlpha(o.alpha)
     op.GeoM.Translate(float64(o.x), float64(o.y))
@@ -199,6 +200,7 @@ func NewObject(game *Game, x, y float32) *GameObject{
         x: x,
         y: y,
         movable: true,
+        Draw: DrawObject,
     }
 }
 
@@ -208,6 +210,7 @@ func NewPlayer(game *Game, x, y float32) *GameObject{
     playerImage := ebiten.NewImageFromImage(characterImage)
 
     player.image = playerImage.SubImage(image.Rect(4, 8, 27, 32)).(*ebiten.Image)
+    player.Draw = DrawObject
 
     player.movable = false
     return player

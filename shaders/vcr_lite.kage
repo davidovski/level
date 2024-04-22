@@ -1,0 +1,33 @@
+//go:build ignore
+
+//kage:unit pixels
+
+package main
+
+var Time float
+var NoiseOffset float
+
+const noiseX = 840.0
+const noiseY = 840.0
+const speed = 0.01
+
+const colorOffsetIntensity = 0.1
+
+func rand(co vec2) float {
+    return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453)
+}
+
+
+func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
+    time := Time * speed
+    uv := srcPos / imageSrc0Size()
+
+    uv.x = uv.x + (rand(vec2(time,srcPos.y)) - 0.5) / (noiseX); 
+    uv.y = uv.y + (rand(vec2(time))-0.5) / (noiseY)
+    offsetR := vec2(0.006 * sin(time), 0.0) * colorOffsetIntensity
+    offsetG := vec2(0.0073 * (cos(time * 0.97)), 0.0) * colorOffsetIntensity
+    r := imageSrc0UnsafeAt((uv+offsetR) * imageSrc0Size()).r
+    g := imageSrc0UnsafeAt((uv+offsetG) * imageSrc0Size()).g
+    b := imageSrc0UnsafeAt(uv * imageSrc0Size()).b
+    return vec4(r, g, b, 1.0)
+}

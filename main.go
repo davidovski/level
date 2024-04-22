@@ -43,9 +43,10 @@ var (
 	noneShader_src []byte
 	//go:embed shaders/vcr.kage
 	vcrShader_src []byte
-
 	//go:embed shaders/clouds.kage
 	cloudShader_src []byte
+	//go:embed shaders/bloom.kage
+	bloomShader_src []byte
 
 	//go:embed assets/tiles.png
 	tilesPng_src []byte
@@ -217,7 +218,7 @@ func (g *Game) Init() {
     g.objects = append(g.objects, g.exit)
 
     g.ResetAll()
-    StartLevel1(g)
+    StartGame(g)
     g.audioPlayer.ambientAudio.SetVolume(0)
 
 
@@ -377,24 +378,46 @@ func DrawBackground(screen *ebiten.Image, time int)  {
 	screen.DrawRectShader(screenWidth, screenHeight, shaders["sky"], shop)
 }
 
+func PostProcess(screen *ebiten.Image, shaderName string, time int) {
+    w, h := screen.Bounds().Dx(), screen.Bounds().Dy()
+    for _, shader := range []string{shaderName} {
+        out := ebiten.NewImage(w, h)
+        shop := &ebiten.DrawRectShaderOptions{}
+
+        shop.Uniforms = map[string]any{
+            "Time":   float32(time) / 60,
+            "NoiseOffset":   float32(time) / 60,
+        }
+        shop.Images[0] = screen
+        shop.Images[1] = screen
+        shop.Images[2] = screen
+        shop.Images[3] = screen
+        out.DrawRectShader(w, h, shaders[shader], shop)
+
+        op := &ebiten.DrawImageOptions{}
+        screen.DrawImage(out, op)
+    }
+
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 
     g.surface.Fill(color.Alpha16{0x9ccf})
     DrawBackground(g.surface, g.time)
 
     op := &ebiten.DrawImageOptions{}
-    op.GeoM.Translate(float64(g.offsetX), float64(g.offsetY))
+    op.GeoM.Translate(float64(g.offsetX), float64(g.offsetY-2))
 
     g.surface.DrawImage(g.tilemap.surface, op)
 
     for i := len(g.objects)-1; i >= 0; i-- {
         obj := g.objects[i]
-        obj.Draw(g.surface, *g.tilemap)
+        obj.Draw(obj, g.surface, *g.tilemap)
     }
 
     if g.state == PLACING {
         if len(g.toPlace) > 0 {
-            g.toPlace[0].Draw(g.surface, *g.tilemap)
+            g.toPlace[0].Draw(g.toPlace[0], g.surface, *g.tilemap)
         }
     }
 
@@ -409,19 +432,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
         }
     }
 
-	shop := &ebiten.DrawRectShaderOptions{}
-	shop.Uniforms = map[string]any{
-        "Time":   float32(g.time) / 60,
-        "NoiseOffset":   float32(g.time) / 60,
-	}
-	shop.Images[0] = g.surface
-	shop.Images[1] = g.surface
-	shop.Images[2] = g.surface
-	shop.Images[3] = g.surface
-	screen.DrawRectShader(screenWidth, screenHeight, shaders[g.shaderName], shop)
 
-    ebitenutil.DebugPrint(screen, fmt.Sprintf("shader: %s", g.shaderName))
-    //screen.DrawImage(surface, &ebiten.DrawImageOptions{})
+    op = &ebiten.DrawImageOptions{}
+    PostProcess(g.surface, g.shaderName, g.time)
+
+    op = &ebiten.DrawImageOptions{}
+    screen.DrawImage(g.surface, &ebiten.DrawImageOptions{})
+    ebitenutil.DebugPrint(screen, fmt.Sprintf("tps: %.4f", ebiten.ActualFPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int){
@@ -440,6 +457,10 @@ func LoadShaders() error {
     }
 
     shaders["vcr"], err = ebiten.NewShader([]byte(vcrShader_src))
+    if err != nil {
+        return err
+    }
+    shaders["bloom"], err = ebiten.NewShader([]byte(bloomShader_src))
     if err != nil {
         return err
     }

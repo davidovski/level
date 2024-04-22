@@ -5,8 +5,8 @@
 package main
 
 var Time float
-var Cursor vec2
+var NoiseOffset float
 
 func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
-    return imageSrc2UnsafeAt(srcPos);
+    return imageSrc0UnsafeAt(srcPos)
 }
