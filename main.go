@@ -36,6 +36,7 @@ const (
     audioFadeIn = 0.999
 
     sampleRate = 44100
+    shadowOffset = 1
 )
 
 var (
@@ -405,10 +406,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
     g.surface.Fill(color.Alpha16{0x9ccf})
     DrawBackground(g.surface, g.time)
 
-    op := &ebiten.DrawImageOptions{}
-    op.GeoM.Translate(float64(g.offsetX), float64(g.offsetY-2))
-
-    g.surface.DrawImage(g.tilemap.surface, op)
+    g.tilemap.Draw(g.surface, float32(g.offsetX), float32(g.offsetY-2))
 
     for i := len(g.objects)-1; i >= 0; i-- {
         obj := g.objects[i]
@@ -432,12 +430,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
         }
     }
 
-
-    op = &ebiten.DrawImageOptions{}
-    PostProcess(g.surface, g.shaderName, g.time)
-
-    op = &ebiten.DrawImageOptions{}
     screen.DrawImage(g.surface, &ebiten.DrawImageOptions{})
+    screen.DrawImage(g.surface, &ebiten.DrawImageOptions{})
+
+    PostProcess(screen, g.shaderName, g.time)
+
     ebitenutil.DebugPrint(screen, fmt.Sprintf("tps: %.4f", ebiten.ActualFPS()))
 }
 

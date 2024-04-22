@@ -133,11 +133,23 @@ func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, dir Di
     return false
 }
 
-func DrawObject(o * GameObject, screen *ebiten.Image, tilemap Tilemap) {
+func ShadowDraw(screen *ebiten.Image, image *ebiten.Image, x, y float32, alpha float32) {
     op := &ebiten.DrawImageOptions{}
-    op.ColorScale.ScaleAlpha(o.alpha)
-    op.GeoM.Translate(float64(o.x), float64(o.y))
-    screen.DrawImage(o.image, op)
+    if alpha > 0{
+        op = &ebiten.DrawImageOptions{}
+        op.ColorScale.ScaleAlpha(alpha)
+        op.ColorScale.Scale(0, 0, 0, 1);
+        op.GeoM.Translate(float64(x+shadowOffset), float64(y + shadowOffset))
+        screen.DrawImage(image, op)
+    }
+    op = &ebiten.DrawImageOptions{}
+    op.ColorScale.ScaleAlpha(alpha)
+    op.GeoM.Translate(float64(x), float64(y))
+    screen.DrawImage(image, op)
+}
+
+func DrawObject(o * GameObject, screen *ebiten.Image, tilemap Tilemap) {
+    ShadowDraw(screen, o.image, o.x, o.y, o.alpha)
 
     if o.highlight {
         vector.StrokeRect(screen, o.x, o.y, float32(o.image.Bounds().Dx()), float32(o.image.Bounds().Dy()), hightlightBorder, color.RGBA{255, 100, 100, 255}, false)

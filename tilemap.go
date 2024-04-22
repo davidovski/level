@@ -10,7 +10,7 @@ import (
 
 type Tilemap struct {
     tilesImage *ebiten.Image
-    surface *ebiten.Image
+    surfaces []*ebiten.Image
     mapWidth int
     tileSize int
     layers [][]int
@@ -27,25 +27,31 @@ func (* Tilemap) Update() error {
 	return nil
 }
 
-func (tm * Tilemap) Draw(screen *ebiten.Image) {
+func (tm * Tilemap) Draw(screen *ebiten.Image, x, y float32) {
+    for _, surf := range tm.surfaces {
+        ShadowDraw(screen, surf, x, y, 1.0)
+    }
 }
 
 func (tm *Tilemap) UpdateSurface() {
     w := tm.tilesImage.Bounds().Dx()
 	tileXCount := w / tileSize
 
+    tm.surfaces = make([]*ebiten.Image, len(tm.layers))
+
 	// Draw each tile with each DrawImage call.
 	// As the source images of all DrawImage calls are always same,
 	// this rendering is done very efficiently.
 	// For more detail, see https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#Image.DrawImage
-	for _, l := range tm.layers {
+	for idx, l := range tm.layers {
+        tm.surfaces[idx] = ebiten.NewImage(tm.mapWidth*tm.tileSize, len(l)/tm.mapWidth*tm.tileSize)
 		for i, t := range l {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64((i%tm.mapWidth)*tm.tileSize), float64((i/tm.mapWidth)*tm.tileSize))
 
 			sx := (t % tileXCount) * tileSize
 			sy := (t / tileXCount) * tileSize
-			tm.surface.DrawImage(tm.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image), op)
+			tm.surfaces[idx].DrawImage(tm.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image), op)
 		}
 	}
 
@@ -59,8 +65,6 @@ func NewTilemap(layers [][]int, mapWidth int) Tilemap {
     }
 
     tilemap.layers = layers
-
-    tilemap.surface = ebiten.NewImage(mapWidth*tilemap.tileSize, len(layers[0])/mapWidth*tilemap.tileSize)
 
     var err error
 	tilemap.tilesImage = tilesImage
