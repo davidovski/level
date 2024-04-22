@@ -124,7 +124,7 @@ func StartLevel4(g *Game) {
     g.tilemap = &tilemap
     g.tilemap.UpdateSurface()
     g.exit.startx = 20 * tileSize
-    g.exit.starty = 5 * tileSize
+    g.exit.starty = 6 * tileSize
 
     g.ResetAll()
     g.playerAi = g.playerAi[:0]
