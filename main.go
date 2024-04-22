@@ -13,6 +13,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
+    "github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
@@ -31,7 +33,9 @@ const (
     friction = 0.75
     airResistance = 0.98
 
-    exitTransitionWeight = 0.9
+    endCardDuration = 200
+
+    exitTransitionWeight = 0.8
     ghostAlpha = 0.5
     hightlightBorder = 2
     audioFadeIn = 0.999
@@ -73,6 +77,7 @@ var (
     shaders map[string]*ebiten.Shader
     tilesImage *ebiten.Image
     characterImage *ebiten.Image
+    fontFaceSource *text.GoTextFaceSource
 )
 
 type State int
@@ -80,7 +85,8 @@ type State int
 const (
 	IN_GAME State = iota
 	END
-	PLACING
+    PLACING
+	PAUSED
     REVERSING
 )
 
@@ -152,7 +158,6 @@ func (g * Game)ReplayPoint() {
         obj.vy = point.vy
         obj.alpha = point.alpha
     }
-    g.time -=1
 }
 
 func (g * Game)ResetPlayerAi() {
@@ -245,6 +250,10 @@ func (g *Game) Update() error {
         g.audioPlayer.ambientAudio.SetVolume(volume)
     }
 
+    if g.state == PAUSED && inpututil.IsKeyJustPressed(ebiten.KeyR) {
+        g.TransitionState()
+    }
+
     if g.state == IN_GAME {
         if inpututil.IsKeyJustPressed(ebiten.KeyR) {
             g.SetReversing()
@@ -288,19 +297,22 @@ func (g *Game) Update() error {
     }
 
     if g.state == REVERSING {
-        g.time -= 1
-        for x := 0; x < rewindSpeed; x++ {
-            g.ReplayPoint()
-        }
+        g.time -= 1 + rewindSpeed;
+        if g.time < g.animStart || g.animStart <= 0{
+            for x := 0; x < rewindSpeed; x++ {
+                g.ReplayPoint()
+            }
 
-        if len(g.recording) == 0 {
-            g.TransitionState()
+            if len(g.recording) == 0 {
+                g.TransitionState()
+            }
         }
     }
 
     if g.state == PLACING {
         g.UpdatePlacing()
     }
+
     if g.player.y > screenHeight {
         g.KillPlayer()
     }
@@ -402,6 +414,26 @@ func PostProcess(screen *ebiten.Image, shaderName string, time int) {
 
 }
 
+func (g *Game) DrawTheEnd(surface *ebiten.Image, alpha float32) {
+    textSize := 30.0
+
+    msg := fmt.Sprintf("THE END")
+    textOp := &text.DrawOptions{}
+    textOp.GeoM.Translate((screenWidth - textSize*7 ) / 2, (screenHeight - textSize) / 2)
+    textOp.ColorScale.ScaleWithColor(color.White)
+    textOp.ColorScale.ScaleAlpha(alpha)
+    text.Draw(surface, msg, &text.GoTextFace{
+        Size:   textSize,
+        Source: fontFaceSource,
+    }, textOp)
+
+}
+
+func (g *Game) IsShowTheEnd() bool {
+    return g.animStart > 0 && (g.state == END || g.state == PAUSED || g.state == REVERSING)
+
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 
     g.surface.Fill(color.Alpha16{0x9ccf})
@@ -420,19 +452,35 @@ func (g *Game) Draw(screen *ebiten.Image) {
         }
     }
 
-    if g.state == END {
+    op := &ebiten.DrawImageOptions{}
+    if g.IsShowTheEnd() {
 
         // draw THE END
-        ebitenutil.DebugPrint(screen, fmt.Sprintf("THE END %d", g.time - g.animStart))
+        a :=  float32(endCardDuration - (g.time - g.animStart)) / float32(endCardDuration);
+        a = float32(math.Pow(float64(a), 10))
+
+        if g.state == PAUSED {
+            a = 0.0
+        }
+
+        if a > 1.0 {
+            a = 1.0
+        }
+
+        fmt.Printf("alpha: %.4f\n", a)
+
+        op.ColorScale.Scale(a, a, a, 1);
+        screen.DrawImage(g.surface, op)
+        g.DrawTheEnd(screen, 1-a)
 
         // AFTER THE END
-        if g.time > g.animStart + 60 {
+        if g.state == END && g.time - g.animStart  > endCardDuration {
             g.TransitionState()
         }
+    } else {
+        screen.DrawImage(g.surface, op)
     }
 
-    screen.DrawImage(g.surface, &ebiten.DrawImageOptions{})
-    screen.DrawImage(g.surface, &ebiten.DrawImageOptions{})
 
     PostProcess(screen, g.shaderName, g.time)
 
@@ -520,6 +568,14 @@ func (g *Game)RemoveObject(obj *GameObject) {
     g.objects = g.objects[:i]
 }
 
+func (g *Game) SetPaused() {
+    g.state = PAUSED
+    g.shaderName = "vcr"
+    //g.player.alpha = 1.0
+    g.audioPlayer.startAudio.Rewind()
+    g.audioPlayer.startAudio.Play()
+    g.audioPlayer.ambientAudio.Pause()
+}
 func (g *Game) SetReversing() {
     g.state = REVERSING
     g.shaderName = "vcr"
@@ -598,6 +654,11 @@ func (g *Game) LoadAudio() {
 }
 
 func (g *Game) LoadImages() {
+    s, err := text.NewGoTextFaceSource(bytes.NewReader(fonts.PressStart2P_ttf))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fontFaceSource = s
 
     img, _, err := image.Decode(bytes.NewReader(characterPng_src))
 	if err != nil {

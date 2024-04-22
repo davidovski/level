@@ -3,9 +3,12 @@ package main
 import (
     "fmt"
 )
+func PauseScreen(g *Game) {
+    g.SetPaused()
+    fmt.Printf("PAUSE\n", 0, len(g.playerAi))
+}
 
 func ReverseLevel(g *Game) {
-    fmt.Printf("pframe %d/%d\n", 0, len(g.playerAi))
     g.SetReversing()
 }
 
@@ -87,10 +90,17 @@ func StartLevel1(g *Game ) {
         g.state = END
 
     })
+    g.QueueState(PauseScreen)
     // after end
-    g.QueueState(ReverseLevel)
+    g.QueueState(func (g *Game){
+        g.animStart = g.time - endCardDuration
+        ReverseLevel(g)
+    })
     // after reversed
-    g.QueueState(afterReversed)
+    g.QueueState(func (g *Game){
+        g.animStart = 0
+        afterReversed(g)
+    })
     g.QueueState(StartLevel2)
 }
 
