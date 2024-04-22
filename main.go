@@ -11,7 +11,10 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+
 )
+
+
 
 const (
     screenWidth = 400
@@ -125,7 +128,6 @@ func (g * Game)ReplayPlayerAi() {
         g.KillPlayer()
     }
 
-    fmt.Printf("pframe %d/%d\n", g.playerAiIdx, len(g.playerAi))
 }
 
 func (g * Game)ReplayPoint() {
@@ -261,24 +263,24 @@ func (g *Game) Update() error {
         for _, obj := range g.objects {
             obj.Update(*g.tilemap, g.objects)
         }
+
         g.tilemap.Update()
         g.ReplayPlayerAi()
 
+        cx, cy := ebiten.CursorPosition()
+
         if len(g.toPlace) > 0 {
             placeable := g.toPlace[0]
-            cx, cy := ebiten.CursorPosition()
             cx = int(math.Floor(float64(cx)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
             cy = int(math.Floor(float64(cy)/float64(g.tilemap.tileSize)))*g.tilemap.tileSize
 
             cx += placeable.offsetX
             cy += placeable.offsetY
-
             placeable.x = float32(cx)
             placeable.y = float32(cy)
-
-            if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
-                g.PlaceObject(cx, cy)
-            }
+        }
+        if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
+            g.PlaceObject(cx, cy)
         }
     }
     if g.player.y > screenHeight {
@@ -290,6 +292,17 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) PlaceObject(cx, cy int) {
+        if len(g.toPlace) == 0 {
+            object := GetObjectAt(g.objects, float32(cx), float32(cy))
+            if object != nil {
+                if object.movable {
+                    g.toPlace = append([]*GameObject{object}, g.toPlace...)
+                    g.RemoveObject(object)
+                }
+            }
+            return
+        }
+
         placeable := g.toPlace[0]
         if placeable.HasCollision(*g.tilemap, g.objects, NONE) {
             return
@@ -330,7 +343,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
         // AFTER THE END
         if g.time > g.animStart + 60 {
-            fmt.Printf("end of end state transition\n")
             g.TransitionState()
         }
     }
@@ -387,6 +399,10 @@ func (g *Game) KillPlayer() {
             g.ResetAll()
             g.playerAi = g.playerAi[:0]
             g.state = IN_GAME
+
+            for _, o := range g.objects {
+                o.movable = false
+            }
         }
     }
 }
@@ -398,6 +414,24 @@ func (g *Game) EndLevel() {
     } else {
         g.ResetPlayerAi()
     }
+}
+
+func (g *Game)RemoveObject(obj *GameObject) {
+
+    i := 0 // output index
+    for _, x := range g.objects {
+        if x != obj {
+            // copy and increment index
+            g.objects[i] = x
+            i++
+        }
+    }
+    // Prevent memory leak by erasing truncated values 
+    // (not needed if values don't contain pointers, directly or indirectly)
+    for j := i; j < len(g.objects); j++ {
+        g.objects[j] = nil
+    }
+    g.objects = g.objects[:i]
 }
 
 func main() {

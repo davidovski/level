@@ -3,7 +3,9 @@ package main
 import (
 	"log"
     "image"
+    "image/color"
     "github.com/hajimehoshi/ebiten/v2"
+    "github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
@@ -37,6 +39,7 @@ type GameObject struct {
     onCollideDown func(this, other *GameObject) bool
     onCollideLeft func(this, other *GameObject) bool
     onCollideRight func(this, other *GameObject) bool
+    movable bool
 }
 
 
@@ -82,6 +85,19 @@ func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
         o.onGround = false;
     }
 }
+func GetObjectAt(objects []*GameObject, x, y float32) *GameObject {
+
+    for _, object := range objects {
+        maxX := object.x + float32(object.image.Bounds().Dx())
+        maxY := object.y + float32(object.image.Bounds().Dy())
+        minX := object.x
+        minY := object.y
+        if x >= minX && x < maxX && y >= minY && y < maxY {
+            return object
+        }
+    }
+    return nil
+}
 
 func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, dir Direction) bool {
     if tilemap.CollideObject(o) {
@@ -114,6 +130,13 @@ func (o * GameObject) Draw(screen *ebiten.Image, tilemap Tilemap) {
     op := &ebiten.DrawImageOptions{}
     op.GeoM.Translate(float64(o.x), float64(o.y))
     screen.DrawImage(o.image, op)
+
+    
+    if o.movable {
+        vector.StrokeRect(screen, o.x, o.y, float32(o.image.Bounds().Dx()), float32(o.image.Bounds().Dy()), 2, color.RGBA{255, 100, 100, 255}, false)
+    }
+
+
 }
 
 func (object * GameObject) Collide(other *GameObject) bool {
@@ -171,6 +194,7 @@ func NewObject(game *Game, x, y float32) *GameObject{
     obj.resistance = airResistance
     obj.x = obj.startx
     obj.y = obj.starty
+    obj.movable = true
     return obj
 }
 
@@ -184,6 +208,7 @@ func NewPlayer(game *Game, x, y float32) *GameObject{
 
     player.image = playerImage.SubImage(image.Rect(4, 8, 27, 32)).(*ebiten.Image)
 
+    player.movable = false
     return player
 }
 
@@ -196,6 +221,7 @@ func NewExit(game *Game, x, y float32) *GameObject{
     exit.onCollideLeft = OnCollideExit
     exit.onCollideRight = OnCollideExit
 
+    exit.movable = false
     return exit
 }
 
