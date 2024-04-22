@@ -134,6 +134,20 @@ func (object * GameObject) Collide(other *GameObject) bool {
     return ! ( minX2 >= maxX1 || maxX2 <= minX1 || minY2 >= maxY1 || maxY2 <= minY1)
 }
 
+func (object * GameObject) Jump() {
+    if object.onGround {
+        object.vy += -jumpHeight
+    }
+}
+
+func (object * GameObject) MoveLeft() {
+    object.vx = -playerSpeed
+}
+func (object * GameObject) MoveRight() {
+    object.vx = playerSpeed
+}
+
+
 func (object * GameObject) ToRect() image.Rectangle {
     width := object.image.Bounds().Dx()
     height := object.image.Bounds().Dy()
@@ -177,6 +191,10 @@ func NewExit(game *Game, x, y float32) *GameObject{
     exit := NewObject(game, x, y)
 
     exit.image = tilesImage.SubImage(image.Rect(0, 16, 32, 48)).(*ebiten.Image)
+    exit.onCollideUp = OnCollideExit
+    exit.onCollideDown = OnCollideExit
+    exit.onCollideLeft = OnCollideExit
+    exit.onCollideRight = OnCollideExit
 
     return exit
 }
@@ -218,6 +236,13 @@ func NewLeftSpike(game *Game, x, y float32) *GameObject{
     return spike
 }
 
+func OnCollideExit(this, other *GameObject) bool {
+    if other == this.game.player {
+        this.game.EndLevel()
+    }
+    return false
+}
+
 func OnCollideSpring(this, other *GameObject) bool {
     other.vy -= SPRING_FORCE
     other.onGround = true
@@ -226,7 +251,7 @@ func OnCollideSpring(this, other *GameObject) bool {
 
 func OnCollideSpike(this, other *GameObject) bool {
     if other == this.game.player {
-        other.game.ResetAll()
+        other.game.KillPlayer()
     }
     return true
 }

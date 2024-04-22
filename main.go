@@ -64,10 +64,15 @@ type Game struct {
     exit *GameObject
     objects []*GameObject
     time int
+    animStart int
     shaderName string
     recording [][]RecPoint
     state State
     toPlace []*GameObject
+    whenStateFinished []func(g *Game)
+
+    playerAi [][3]bool
+    playerAiIdx int
 }
 
 func (g * Game)RecordPoint() {
@@ -81,6 +86,46 @@ func (g * Game)RecordPoint() {
         })
     }
     g.recording = append(g.recording, points)
+}
+
+func (g * Game)ResetPlayerAi() {
+    g.playerAiIdx = 0
+    g.player.x = g.player.startx
+    g.player.y = g.player.starty
+    g.player.vx = 0
+    g.player.vy = 0
+}
+
+func (g * Game)ReplayPlayerAi() {
+    if len(g.playerAi) == 0 {
+        return
+    }
+
+    var state [3]bool
+    if g.playerAiIdx >= len(g.playerAi) {
+        state = g.playerAi[len(g.playerAi) - 1]
+    } else {
+        state = g.playerAi[g.playerAiIdx]
+    }
+
+    if state[0] {
+        g.player.MoveLeft()
+    }
+
+    if state[1] {
+        g.player.MoveRight()
+    }
+
+    if state[2] {
+        g.player.Jump()
+    }
+
+    g.playerAiIdx += 1
+    if g.playerAiIdx >= len(g.playerAi) * 2 {
+        g.KillPlayer()
+    }
+
+    fmt.Printf("pframe %d/%d\n", g.playerAiIdx, len(g.playerAi))
 }
 
 func (g * Game)ReplayPoint() {
@@ -102,22 +147,13 @@ func (g * Game) ResetAll() {
     for _, obj := range g.objects {
         obj.x = obj.startx
         obj.y = obj.starty
+        obj.vx = 0
+        obj.vy = 0
     }
     g.recording = g.recording[:0];
 }
 
 func (g *Game) Init() {
-    g.state = PLACING
-
-    g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewLeftSpike(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
-
     g.surface = ebiten.NewImage(screenWidth, screenHeight)
     g.shaderName = "none"
     tilemap := NewTilemap([][]int{
@@ -145,12 +181,13 @@ func (g *Game) Init() {
 
     g.tilemap.UpdateSurface()
 
-    g.player = NewPlayer(g, 4 * tileSize, 8 * tileSize)
+    g.player = NewPlayer(g, 4 * tileSize, 9 * tileSize)
     g.objects = append(g.objects, g.player)
-    g.exit = NewExit(g, 21 * tileSize, 8 * tileSize)
+    g.exit = NewExit(g, 21 * tileSize, 9 * tileSize)
     g.objects = append(g.objects, g.exit)
 
     g.ResetAll()
+    StartLevel1(g)
 
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
@@ -164,30 +201,41 @@ func (g *Game) Init() {
 func (g *Game) Update() error {
     g.time += 1
 
-    if ebiten.IsKeyPressed(ebiten.KeyR) {
-        if g.state == IN_GAME {
-            g.state = REVERSING
-            g.shaderName = "vcr"
-        }
-    } else {
-        if g.state == REVERSING {
-            g.state = IN_GAME
-            g.shaderName = "none"
-        }
-    }
+    //if ebiten.IsKeyPressed(ebiten.KeyR) {
+    //    if g.state == IN_GAME {
+    //        g.state = REVERSING
+    //        g.shaderName = "vcr"
+    //    }
+    //} else {
+    //    if g.state == REVERSING {
+    //        g.state = IN_GAME
+    //        g.shaderName = "none"
+    //    }
+    //}
 
     if g.state == IN_GAME {
+        var currentState [3]bool
         if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
-            g.player.vx = -playerSpeed
+            g.player.MoveLeft()
+            currentState[0] = true
+        } else {
+            currentState[0] = false
         }
 
         if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
-            g.player.vx = playerSpeed
+            g.player.MoveRight()
+            currentState[1] = true
+        } else {
+            currentState[1] = false
         }
 
-        if g.player.onGround && (ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyUp)) {
-            g.player.vy += -jumpHeight
+        if  (ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyUp)) {
+            g.player.Jump()
+            currentState[2] = true
+        } else {
+            currentState[2] = false
         }
+        g.playerAi = append(g.playerAi, currentState)
 
         for _, obj := range g.objects {
             obj.Update(*g.tilemap, g.objects)
@@ -201,9 +249,21 @@ func (g *Game) Update() error {
         for x := 0; x < rewindSpeed; x++ {
             g.ReplayPoint()
         }
+
+        if len(g.recording) == 0 {
+            g.TransitionState()
+            fmt.Printf("end of recording state transition\n")
+        }
     }
 
     if g.state == PLACING {
+
+        for _, obj := range g.objects {
+            obj.Update(*g.tilemap, g.objects)
+        }
+        g.tilemap.Update()
+        g.ReplayPlayerAi()
+
         if len(g.toPlace) > 0 {
             placeable := g.toPlace[0]
             cx, cy := ebiten.CursorPosition()
@@ -221,6 +281,10 @@ func (g *Game) Update() error {
             }
         }
     }
+    if g.player.y > screenHeight {
+        g.KillPlayer()
+    }
+
 
     return nil
 }
@@ -238,10 +302,6 @@ func (g *Game) PlaceObject(cx, cy int) {
 
         g.toPlace = g.toPlace[1:len(g.toPlace)]
 
-        if len(g.toPlace) == 0 {
-            g.ResetAll()
-            g.state = IN_GAME
-        }
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -264,6 +324,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
         }
     }
 
+    if g.state == END {
+        // draw THE END
+        ebitenutil.DebugPrint(screen, fmt.Sprintf("THE END %d", g.time - g.animStart))
+
+        // AFTER THE END
+        if g.time > g.animStart + 60 {
+            fmt.Printf("end of end state transition\n")
+            g.TransitionState()
+        }
+    }
+
 	shop := &ebiten.DrawRectShaderOptions{}
 	shop.Uniforms = map[string]any{
         "Time":   float32(g.time) / 60,
@@ -275,7 +346,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	shop.Images[3] = g.surface
 	screen.DrawRectShader(screenWidth, screenHeight, shaders[g.shaderName], shop)
 
-    ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
+    //ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
     //screen.DrawImage(surface, &ebiten.DrawImageOptions{})
 }
 
@@ -301,6 +372,33 @@ func LoadShaders() error {
 
     return nil
 }
+func (g *Game) KillPlayer() {
+    if g.state == IN_GAME {
+        g.ResetAll()
+        g.playerAi = g.playerAi[:0]
+    } else {
+        g.playerAiIdx = 0
+        g.player.x = g.player.startx
+        g.player.y = g.player.starty
+        g.player.vx = 0
+        g.player.vy = 0
+
+        if len(g.toPlace) == 0 {
+            g.ResetAll()
+            g.playerAi = g.playerAi[:0]
+            g.state = IN_GAME
+        }
+    }
+}
+
+func (g *Game) EndLevel() {
+    if g.state == IN_GAME {
+        g.state = END
+        g.TransitionState()
+    } else {
+        g.ResetPlayerAi()
+    }
+}
 
 func main() {
     LoadShaders()
@@ -318,4 +416,17 @@ func main() {
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (g *Game) TransitionState() {
+    if len(g.whenStateFinished) > 0 {
+        var function func(*Game)
+        g.whenStateFinished, function = g.whenStateFinished[1:len(g.whenStateFinished)], g.whenStateFinished[0]
+        function(g)
+    }
+
+}
+
+func (g *Game) QueueState(function func(g *Game)) {
+    g.whenStateFinished = append(g.whenStateFinished, function)
 }
