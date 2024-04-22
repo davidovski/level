@@ -31,7 +31,7 @@ func levelStart(g *Game) {
 }
 
 func StartGame(g *Game) {
-    StartLevel1(g)
+    StartLevel4(g)
 }
 
 func StartLevel1(g *Game ) {
@@ -120,6 +120,7 @@ func StartLevel3(g *Game) {
 
 func StartLevel4(g *Game) {
     g.SetPlacing()
+    g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
     g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
 
     g.ClearAll()

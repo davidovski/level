@@ -117,8 +117,8 @@ func (t * Tilemap) Collide(x, y, width, height int) bool {
 
 
 func (t * Tilemap) CollideObject(object *GameObject) bool {
-    width := object.image.Bounds().Dx()
-    height := object.image.Bounds().Dy()
+    width := object.images[0].Bounds().Dx()
+    height := object.images[0].Bounds().Dy()
     x := int(object.x)
     y := int(object.y)
     return t.Collide(x, y, width, height)
