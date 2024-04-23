@@ -39,7 +39,7 @@ const (
     ghostAlpha = 0.5
     hightlightBorder = 2
     audioFadeIn = 0.99
-    musicVolume = 0.3
+    musicVolume = 0.2
 
     sampleRate = 44100
     shadowOffset = 1
