@@ -15,7 +15,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
-    "github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
@@ -53,6 +52,9 @@ const (
 )
 
 var (
+	//go:embed assets/font.otf
+	fontOtf_src []byte
+
 	//go:embed shaders/none.kage
 	noneShader_src []byte
 	//go:embed shaders/vcr.kage
@@ -572,7 +574,7 @@ func (g *Game) DrawTitle(surface *ebiten.Image, alpha float32) {
     textSize := 30.0
     tmp := ebiten.NewImage(screenWidth, screenHeight)
 
-    msg := fmt.Sprintf("LEVEL")
+    msg := fmt.Sprintf("LEVÅÆ")
     textOp := &text.DrawOptions{}
     textOp.GeoM.Translate((screenWidth - textSize*5 ) / 2, (screenHeight - textSize) / 3)
     textOp.ColorScale.ScaleWithColor(color.RGBA{216, 211, 210, 255})
@@ -911,7 +913,7 @@ func (g *Game) LoadAudio() {
 }
 
 func (g *Game) LoadImages() {
-    s, err := text.NewGoTextFaceSource(bytes.NewReader(fonts.PressStart2P_ttf))
+    s, err := text.NewGoTextFaceSource(bytes.NewReader(fontOtf_src))
 	if err != nil {
 		log.Fatal(err)
 	}

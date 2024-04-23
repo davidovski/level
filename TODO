@@ -4,11 +4,11 @@
 - [x] animatePlayer
 - [ ] add particles
 - [ ] subtle screen shake on death
-- [ ] add an actual ending
+- [?] add an actual ending
 - [ ] animateExit
 - [x] add voiceover
 - [x] add more levels
 - [x] add more items
 - [x] add << and || on pause and play
 - [x] add menu
-- [ ] add hints (press e to edit again, r to reverse)
+- [x] add hints (press e to edit again, r to reverse)
