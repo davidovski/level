@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"image"
 	"image/color"
 
@@ -83,6 +84,39 @@ func UpdateSpring(o * GameObject, tilemap Tilemap, others []*GameObject) bool {
             o.state = 0
         } else if o.state == 2 {
             o.state = 1
+        }
+    }
+    return false
+}
+
+func UpdatePlayer(o * GameObject, tilemap Tilemap, others []*GameObject) bool {
+    var d float32 = 8.0 
+    var t float32 = 1.0
+    // 0
+    if o.onGround {
+        if o.vx > t {
+            o.state = (int(o.x/d) % 6) + 1
+        } else if o.vx < -t {
+            o.state = (int(o.x/d) % 6) + 16
+        } else {
+            if o.vx < 0 {
+                o.state = 15
+            } else {
+                o.state = 0
+            }
+        }
+    } else {
+        if o.vx == 0 {
+
+            if o.state >= 15 {
+                o.state = (int(math.Abs(float64(o.vy))) % 5) + 25
+            } else {
+                o.state = (int(math.Abs(float64(o.vy))) % 5) + 10
+            }
+        } else if o.vx > 0 {
+            o.state = (int(math.Abs(float64(o.vy))) % 5) + 10
+        } else {
+            o.state = (int(math.Abs(float64(o.vy))) % 5) + 25 
         }
     }
     return false
@@ -270,9 +304,50 @@ func NewPlayer(game *Game, x, y float32) *GameObject{
     playerImage := ebiten.NewImageFromImage(characterImage)
 
     player.images = []*ebiten.Image{
-        playerImage.SubImage(image.Rect(4, 8, 27, 32)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(0, 0, 17, 28)).(*ebiten.Image),
+
+        // run
+        playerImage.SubImage(image.Rect(0, 30, 17, 57)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(21, 30, 38, 58)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(42, 30, 59, 58)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(63, 30, 81, 57)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(84, 30, 101, 58)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(105, 30, 122, 58)).(*ebiten.Image),
+
+        // jump
+        playerImage.SubImage(image.Rect(0, 60, 17, 88)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(21, 60, 41, 86)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(42, 60, 63, 86)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(63, 60, 80, 90)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(84, 60, 102, 89)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(105, 60, 125, 89)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(126, 60, 148, 87)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(148, 60, 166, 86)).(*ebiten.Image),
+
+        //left
+        playerImage.SubImage(image.Rect(0, 90, 17, 118)).(*ebiten.Image),
+
+        // run
+        playerImage.SubImage(image.Rect(0, 120, 17, 147)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(21, 120, 38, 148)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(42, 120, 59, 148)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(63, 120, 81, 147)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(84, 120, 101, 148)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(105, 120, 122, 148)).(*ebiten.Image),
+
+        // jump
+        playerImage.SubImage(image.Rect(0, 150, 17, 178)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(21, 150, 41, 176)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(42, 150, 63, 176)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(63, 150, 80, 180)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(84, 150, 102, 179)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(105, 150, 125, 179)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(126, 150, 148, 177)).(*ebiten.Image),
+        playerImage.SubImage(image.Rect(148, 150, 166, 176)).(*ebiten.Image),
     }
+
     player.Draw = DrawObject
+    player.UpdateFunc = UpdatePlayer
 
     player.movable = false
     return player

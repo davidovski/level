@@ -5,7 +5,7 @@ import (
 )
 
 func StartGame(g *Game) {
-    StartLevel1(g)
+    StartLevel4(g)
 }
 
 func PauseScreen(g *Game) {
