@@ -10,6 +10,7 @@ import (
 
 const (
     SPRING_FORCE = 8
+    SIDE_SPRING_FORCE = 8
 )
 
 type Direction int
@@ -41,7 +42,7 @@ type GameObject struct {
     onCollideLeft func(this, other *GameObject) bool
     onCollideRight func(this, other *GameObject) bool
     Draw func (o * GameObject, screen *ebiten.Image, tilemap Tilemap)
-    UpdateFunc func (o * GameObject, tilemap Tilemap, others []*GameObject)
+    UpdateFunc func (o * GameObject, tilemap Tilemap, others []*GameObject) bool
     movable bool
     state int
     delta int
@@ -52,7 +53,31 @@ type Player struct {
     GameObject
 }
 
-func UpdateSpring(o * GameObject, tilemap Tilemap, others []*GameObject) {
+func UpdateHPlatform(o * GameObject, tilemap Tilemap, others []*GameObject) bool {
+    o.delta += 1
+    if int(o.delta / 128) % 2 == 0 {
+        o.vx = -0.4
+    } else {
+        o.vx = 0.4
+    }
+    o.x += o.vx
+    o.vy = 0
+    return true
+}
+
+func UpdateVPlatform(o * GameObject, tilemap Tilemap, others []*GameObject) bool {
+    o.delta += 1
+    if int(o.delta / 128) % 2 == 0 {
+        o.vy = -0.4
+    } else {
+        o.vy = 0.4
+    }
+    o.y += o.vy
+    return true
+}
+
+func UpdateSpring(o * GameObject, tilemap Tilemap, others []*GameObject) bool {
+    o.delta += 1
     if o.delta % 3 == 0 {
         if o.state == 1 {
             o.state = 0
@@ -60,27 +85,29 @@ func UpdateSpring(o * GameObject, tilemap Tilemap, others []*GameObject) {
             o.state = 1
         }
     }
+    return false
 }
 
 func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
-    if o.UpdateFunc != nil {
-        o.UpdateFunc(o, tilemap, others)
-    }
-    o.delta += 1
-
     var direction Direction
     o.vy += gravity
 
     o.vx *= o.resistance
     o.vy *= o.resistance
 
+    if o.UpdateFunc != nil {
+        if o.UpdateFunc(o, tilemap, others) {
+            return
+        }
+    }
+
     o.x += o.vx
     
 
     if o.vx > 0 {
-        direction = RIGHT
-    } else {
         direction = LEFT
+    } else {
+        direction = RIGHT
     }
 
     if o.HasCollision(tilemap, others, direction) {
@@ -105,6 +132,7 @@ func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
     } else {
         o.onGround = false;
     }
+
 }
 func GetObjectAt(objects []*GameObject, x, y float32) *GameObject {
 
@@ -283,7 +311,35 @@ func NewSpring(game *Game, x, y float32) *GameObject{
         tilesImage.SubImage(image.Rect(176, 16, 192, 32)).(*ebiten.Image),
         tilesImage.SubImage(image.Rect(176, 32, 192, 48)).(*ebiten.Image),
     }
-    spring.onCollideUp = OnCollideSpring
+    spring.onCollideUp = OnCollideTopSpring
+    spring.UpdateFunc = UpdateSpring
+
+    return spring
+}
+
+func NewRightSideSpring(game *Game, x, y float32) *GameObject{
+    spring := NewObject(game, x, y)
+
+    spring.images = []*ebiten.Image{
+        tilesImage.SubImage(image.Rect(176, 48, 192, 64)).(*ebiten.Image),
+        tilesImage.SubImage(image.Rect(176, 64, 192, 80)).(*ebiten.Image),
+        tilesImage.SubImage(image.Rect(176, 80, 192, 96)).(*ebiten.Image),
+    }
+    spring.onCollideRight = OnCollideRightSideSpring
+    spring.UpdateFunc = UpdateSpring
+
+    return spring
+}
+
+func NewLeftSideSpring(game *Game, x, y float32) *GameObject{
+    spring := NewObject(game, x, y)
+
+    spring.images = []*ebiten.Image{
+        tilesImage.SubImage(image.Rect(176, 96, 192, 112)).(*ebiten.Image),
+        tilesImage.SubImage(image.Rect(176, 112, 192, 128)).(*ebiten.Image),
+        tilesImage.SubImage(image.Rect(176, 128, 192, 144)).(*ebiten.Image),
+    }
+    spring.onCollideLeft = OnCollideLeftSideSpring
     spring.UpdateFunc = UpdateSpring
 
     return spring
@@ -309,9 +365,34 @@ func NewLeftSpike(game *Game, x, y float32) *GameObject{
     spike.images = []*ebiten.Image{
         tilesImage.SubImage(image.Rect(195, 16, 208, 32)).(*ebiten.Image),
     }
-    spike.onCollideRight = OnCollideSpike
+    spike.onCollideLeft = OnCollideSpike
 
     return spike
+}
+
+func NewVPlatform(game *Game, x, y float32) *GameObject{
+    platform := NewObject(game, x, y)
+
+    platform.images = []*ebiten.Image{
+        tilesImage.SubImage(image.Rect(208, 0, 224, 5)).(*ebiten.Image),
+    }
+    platform.onCollideUp = OnCollideVPlatformTop
+    platform.onCollideDown = OnCollideVPlatformBottom
+    platform.UpdateFunc = UpdateVPlatform
+
+    return platform
+}
+
+func NewHPlatform(game *Game, x, y float32) *GameObject{
+    platform := NewObject(game, x, y)
+
+    platform.images = []*ebiten.Image{
+        tilesImage.SubImage(image.Rect(208, 0, 224, 5)).(*ebiten.Image),
+    }
+    platform.onCollideUp = OnCollideVPlatformTop
+    platform.UpdateFunc = UpdateHPlatform
+
+    return platform
 }
 
 func OnCollideExit(this, other *GameObject) bool {
@@ -329,13 +410,31 @@ func OnCollideExit(this, other *GameObject) bool {
 }
 
 func OnCollideSpring(this, other *GameObject) bool {
-    other.vy = -SPRING_FORCE
     other.onGround = true
     this.state = 2
     this.delta = 1
     this.game.audioPlayer.springAudio.Rewind()
     this.game.audioPlayer.springAudio.Play()
     return false
+}
+
+func OnCollideTopSpring(this, other *GameObject) bool {
+    other.vy = -SPRING_FORCE
+    other.y += other.vy
+
+    return OnCollideSpring(this, other)
+}
+
+func OnCollideLeftSideSpring(this, other *GameObject) bool {
+    other.vx = -SPRING_FORCE
+    other.x += other.vx
+    return OnCollideSpring(this, other)
+}
+
+func OnCollideRightSideSpring(this, other *GameObject) bool {
+    other.vx = SPRING_FORCE
+    other.x += other.vx
+    return OnCollideSpring(this, other)
 }
 
 func OnCollideSpike(this, other *GameObject) bool {
@@ -345,3 +444,14 @@ func OnCollideSpike(this, other *GameObject) bool {
     return true
 }
 
+func OnCollideVPlatformTop(this, other *GameObject) bool {
+    other.y = this.y - float32(other.images[0].Bounds().Dy()) + this.vy
+    other.vy = this.vy
+    other.x += this.vx
+    return true
+}
+func OnCollideVPlatformBottom(this, other *GameObject) bool {
+    other.y = this.y + float32(this.images[0].Bounds().Dy())
+    other.vy = this.vy
+    return false
+}

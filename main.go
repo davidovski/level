@@ -100,6 +100,7 @@ type RecPoint struct {
     vx float32
     vy float32
     alpha float32
+    delta int
 }
 
 type AudioPlayer struct {
@@ -143,6 +144,7 @@ func (g * Game)RecordPoint() {
             vx: object.vx,
             vy: object.vy,
             alpha: object.alpha,
+            delta: object.delta,
         })
     }
     g.recording = append(g.recording, points)
@@ -162,6 +164,7 @@ func (g * Game)ReplayPoint() {
         obj.vx = point.vx
         obj.vy = point.vy
         obj.alpha = point.alpha
+        obj.delta = point.delta
     }
 }
 
@@ -216,6 +219,7 @@ func (g * Game) ResetAll() {
         obj.y = obj.starty
         obj.vx = 0
         obj.vy = 0
+        obj.delta = 0
     }
     g.recording = g.recording[:0];
 }
@@ -384,6 +388,7 @@ func (g *Game) PlaceObject(cx, cy int) {
             return
         }
 
+        placeable.delta = 0
         placeable.startx = float32(cx)
         placeable.starty = float32(cy)
         placeable.highlight = false
@@ -426,6 +431,25 @@ func PostProcess(screen *ebiten.Image, shaderName string, time int) {
         op := &ebiten.DrawImageOptions{}
         screen.DrawImage(out, op)
     }
+
+}
+
+func (g *Game) DrawVCRControls(surface *ebiten.Image) {
+    textSize := 15.0
+
+    var msg string
+    if g.state == REVERSING {
+        msg = fmt.Sprintf("<<")
+    } else {
+        msg = fmt.Sprintf("||")
+    }
+    textOp := &text.DrawOptions{}
+    textOp.GeoM.Translate(15, 15)
+    textOp.ColorScale.ScaleWithColor(color.RGBA{255, 255, 255, 255})
+    text.Draw(surface, msg, &text.GoTextFace{
+        Size:   textSize,
+        Source: fontFaceSource,
+    }, textOp)
 
 }
 
@@ -476,7 +500,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
         a = 1 - float64(math.Pow(float64(a), 2))
 
         if g.state == PAUSED {
-            a = 10.0
+            a = 1.0
         }
 
         if a < 0.0 {
@@ -494,6 +518,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
         }
     } else {
         screen.DrawImage(g.surface, op)
+    }
+
+    if g.state == REVERSING || g.state == PAUSED {
+        g.DrawVCRControls(screen)
     }
 
 
