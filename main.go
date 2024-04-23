@@ -111,6 +111,14 @@ var (
 	voice6Ogg_src []byte
 	//go:embed assets/vo/voice7.ogg
 	voice7Ogg_src []byte
+	//go:embed assets/vo/voice8.ogg
+	voice8Ogg_src []byte
+	//go:embed assets/vo/voice9.ogg
+	voice9Ogg_src []byte
+	//go:embed assets/vo/voice10.ogg
+	voice10Ogg_src []byte
+	//go:embed assets/vo/voice11.ogg
+	voice11Ogg_src []byte
 )
 
 var (
@@ -894,6 +902,10 @@ func (g *Game) LoadAudio() {
         voice5Ogg_src,
         voice6Ogg_src,
         voice7Ogg_src,
+        voice8Ogg_src,
+        voice9Ogg_src,
+        voice10Ogg_src,
+        voice11Ogg_src,
     }, g.audioPlayer.audioContext)
 
 }

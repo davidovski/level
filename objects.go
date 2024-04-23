@@ -380,7 +380,7 @@ func NewExit(game *Game, x, y float32) *GameObject{
     exit := NewObject(game, x, y)
 
     exit.images = []*ebiten.Image{
-        tilesImage.SubImage(image.Rect(0, 16, 31, 48)).(*ebiten.Image),
+        tilesImage.SubImage(image.Rect(0, 16, 32, 48)).(*ebiten.Image),
     }
     exit.onCollideUp = OnCollideExit
     exit.onCollideDown = OnCollideExit
