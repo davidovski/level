@@ -423,7 +423,8 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) UpdatePlacing() {
-    for _, obj := range g.objects {
+    for i := len(g.objects)-1; i >= 0; i-- {
+        obj := g.objects[i]
         obj.Update(*g.tilemap, g.objects)
         if obj.y > screenHeight {
             g.toPlace = append(g.toPlace, obj)
