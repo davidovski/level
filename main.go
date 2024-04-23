@@ -426,7 +426,7 @@ func (g *Game) UpdatePlacing() {
     for i := len(g.objects)-1; i >= 0; i-- {
         obj := g.objects[i]
         obj.Update(*g.tilemap, g.objects)
-        if obj.y > screenHeight {
+        if obj.y > screenHeight && obj != g.player{
             g.toPlace = append(g.toPlace, obj)
             g.RemoveObject(obj)
         }

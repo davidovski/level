@@ -293,6 +293,8 @@ func StartLevel6(g *Game) {
     g.exit.startx = 2 * tileSize
     g.exit.starty = 8 * tileSize
 
+    g.exit.movable = false
+
     g.ResetAll()
     g.playerAi = g.playerAi[:0]
 
@@ -460,7 +462,7 @@ func StartLevel8(g *Game) {
 
 func StartLevel9(g *Game) {
     g.SetPlacing()
-    noMoveable(g)
+    //noMoveable(g)
     g.toPlace = append(g.toPlace, NewVPlatform(g, 0, 0))
     g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
     g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
