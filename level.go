@@ -99,7 +99,11 @@ func StartLevel1(g *Game ) {
         g.state = END
 
     })
-    g.QueueState(PauseScreen)
+    g.QueueState(func (g *Game){
+        // What do you mean "is that it?". I kinda uhh ran out of time to finish the actual game but uhhh if you want I can let you have a go at finishing it for me. Just press R to reverse time and we'll go from there
+        PauseScreen(g)
+        g.audioPlayer.voiceAudio[0].Play()
+    })
     // after end
     g.QueueState(func (g *Game){
         g.animStart = g.time - endCardDuration
@@ -115,20 +119,30 @@ func StartLevel1(g *Game ) {
 
 func StartLevel2(g *Game) {
     g.SetPlacing()
-    noMoveable(g)
+    //noMoveable(g)
 
+    //  OK so, this level could probably be a bit more diffcult. Here's a spikey thing, just click to place it anywhere, just make sure it kills the player
+    g.audioPlayer.voiceAudio[1].Play()
     g.toPlace = append(g.toPlace, NewLeftSpike(g, 0, 0))
 
     // after end
     g.QueueState(ReverseLevel)
+
     // after reversed
-    g.QueueState(afterReversed)
+    g.QueueState(func (g *Game){
+        //  Nice, Good job.
+    // Ok right I've got another spike for you to place. Remember, you can click on things to move them around if it doesn't quite work out
+        g.audioPlayer.voiceAudio[2].Play()
+        afterReversed(g)
+    })
     g.QueueState(StartLevel3)
 }
 
 func StartLevel3(g *Game) {
     g.SetPlacing()
     noMoveable(g)
+
+    //g.audioPlayer.voiceAudio[3].Play()
 
     g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
 
@@ -144,6 +158,8 @@ func StartLevel4(g *Game) {
     noMoveable(g)
 
     g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
+    // Ok lets try something a bit different. here's a spring this time
+    g.audioPlayer.voiceAudio[4].Play()
 
     g.ClearAll()
     tilemap := NewTilemap([][]int{
@@ -201,10 +217,12 @@ func StartLevel4(g *Game) {
     g.QueueState(StartLevel5)
 }
 
-// HMM maybe we can make this a bit harder, lets try moving the exit by clicking on it
 func StartLevel5(g *Game) {
     g.SetPlacing()
     //noMoveable(g)
+
+    // HMM thats too easy. maybe Try moving the exit ontop of the hill, that could work
+    g.audioPlayer.voiceAudio[5].Play()
 
     //g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
     g.exit.movable = true
@@ -218,11 +236,12 @@ func StartLevel5(g *Game) {
     g.QueueState(StartLevel6)
 }
 
-// Ok lets add a spring there as well
+// How about this?
 func StartLevel6(g *Game) {
     g.SetPlacing()
     //noMoveable(g)
 
+    g.audioPlayer.voiceAudio[6].Play()
     g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
     g.toPlace = append(g.toPlace, NewRightSideSpring(g, 0, 0))
     g.toPlace = append(g.toPlace, NewLeftSideSpring(g, 0, 0))

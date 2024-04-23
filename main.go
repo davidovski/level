@@ -38,7 +38,8 @@ const (
     exitTransitionWeight = 0.7
     ghostAlpha = 0.5
     hightlightBorder = 2
-    audioFadeIn = 0.999
+    audioFadeIn = 0.99
+    musicVolume = 0.3
 
     sampleRate = 44100
     shadowOffset = 1
@@ -93,6 +94,21 @@ var (
 
 	//go:embed assets/land2.ogg
 	land2Ogg_src []byte
+
+	//go:embed assets/vo/voice1.ogg
+	voice1Ogg_src []byte
+	//go:embed assets/vo/voice2.ogg
+	voice2Ogg_src []byte
+	//go:embed assets/vo/voice3.ogg
+	voice3Ogg_src []byte
+	//go:embed assets/vo/voice4.ogg
+	voice4Ogg_src []byte
+	//go:embed assets/vo/voice5.ogg
+	voice5Ogg_src []byte
+	//go:embed assets/vo/voice6.ogg
+	voice6Ogg_src []byte
+	//go:embed assets/vo/voice7.ogg
+	voice7Ogg_src []byte
 )
 
 var (
@@ -136,6 +152,7 @@ type AudioPlayer struct {
     springAudio  *audio.Player
     jumpAudio  []*audio.Player
     landAudio  []*audio.Player
+    voiceAudio  []*audio.Player
 }
 
 type Game struct {
@@ -311,7 +328,7 @@ func (g *Game) Update() error {
             g.audioPlayer.ambientAudio.Play()
         }
         volume := g.audioPlayer.ambientAudio.Volume()
-        volume = 1-((1-volume)*audioFadeIn)
+        volume = musicVolume-((musicVolume-volume)*audioFadeIn)
         g.audioPlayer.ambientAudio.SetVolume(volume)
     }
 
@@ -838,6 +855,16 @@ func (g *Game) LoadAudio() {
     g.audioPlayer.springAudio = loadAudioVorbis(springOgg_src, g.audioPlayer.audioContext)
     g.audioPlayer.jumpAudio = loadAudiosVorbis([][]byte{jump1Ogg_src, jump2Ogg_src}, g.audioPlayer.audioContext)
     g.audioPlayer.landAudio = loadAudiosVorbis([][]byte{land1Ogg_src, land2Ogg_src}, g.audioPlayer.audioContext)
+
+    g.audioPlayer.voiceAudio = loadAudiosVorbis([][]byte{
+        voice1Ogg_src,
+        voice2Ogg_src,
+        voice3Ogg_src,
+        voice4Ogg_src,
+        voice5Ogg_src,
+        voice6Ogg_src,
+        voice7Ogg_src,
+    }, g.audioPlayer.audioContext)
 
 }
 
