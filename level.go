@@ -211,7 +211,7 @@ func StartLevel5(g *Game) {
     g.QueueState(ReverseLevel)
     // after reversed
     g.QueueState(afterReversed)
-    g.QueueState(StartLevel5)
+    g.QueueState(StartLevel6)
 }
 
 // Ok lets add a spring there as well
@@ -229,5 +229,5 @@ func StartLevel6(g *Game) {
     g.QueueState(ReverseLevel)
     // after reversed
     g.QueueState(afterReversed)
-    g.QueueState(StartLevel5)
+    g.QueueState(StartLevel6)
 }
