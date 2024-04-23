@@ -41,6 +41,8 @@ const (
 
     sampleRate = 44100
     shadowOffset = 1
+
+    musicLoopLength = 230
 )
 
 var (
@@ -73,6 +75,18 @@ var (
 
 	//go:embed assets/spring.ogg
 	springOgg_src []byte
+
+	//go:embed assets/jump1.ogg
+	jump1Ogg_src []byte
+
+	//go:embed assets/jump2.ogg
+	jump2Ogg_src []byte
+
+	//go:embed assets/land1.ogg
+	land1Ogg_src []byte
+
+	//go:embed assets/land2.ogg
+	land2Ogg_src []byte
 )
 
 var (
@@ -110,6 +124,8 @@ type AudioPlayer struct {
     startAudio  *audio.Player
     ambientAudio  *audio.Player
     springAudio  *audio.Player
+    jumpAudio  []*audio.Player
+    landAudio  []*audio.Player
 }
 
 type Game struct {
@@ -257,6 +273,10 @@ func (g *Game) Update() error {
 
 
     if g.state == IN_GAME || g.state == PLACING {
+        if g.audioPlayer.ambientAudio.Position().Seconds() > musicLoopLength {
+            g.audioPlayer.ambientAudio.Rewind()
+        }
+
         if ! g.audioPlayer.ambientAudio.IsPlaying() {
             g.audioPlayer.ambientAudio.Play()
         }
@@ -649,6 +669,25 @@ func (g *Game) SetPlacing() {
     g.StopRewinding()
 }
 
+func loadAudiosVorbis(oggFiles [][]byte, audioContext *audio.Context) []*audio.Player {
+    var players = make([]*audio.Player, 0)
+    for _, x := range oggFiles {
+        var err error
+        sound, err := vorbis.DecodeWithoutResampling(bytes.NewReader(x))
+        if err != nil {
+            return nil
+        }
+
+        p, err := audioContext.NewPlayer(sound)
+
+        if err != nil {
+            return nil
+        }
+        players = append(players, p)
+    }
+    return players
+}
+
 func loadAudioVorbis(oggFile []byte, audioContext *audio.Context) *audio.Player {
 
     var err error
@@ -689,6 +728,8 @@ func (g *Game) LoadAudio() {
     g.audioPlayer.startAudio = loadAudio(startWav_src, g.audioPlayer.audioContext)
     g.audioPlayer.ambientAudio = loadAudioVorbis(ambientOgg_src, g.audioPlayer.audioContext)
     g.audioPlayer.springAudio = loadAudioVorbis(springOgg_src, g.audioPlayer.audioContext)
+    g.audioPlayer.jumpAudio = loadAudiosVorbis([][]byte{jump1Ogg_src, jump2Ogg_src}, g.audioPlayer.audioContext)
+    g.audioPlayer.landAudio = loadAudiosVorbis([][]byte{land1Ogg_src, land2Ogg_src}, g.audioPlayer.audioContext)
 
 }
 

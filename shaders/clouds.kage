@@ -9,10 +9,10 @@ var Time float
 const cloudscale = 0.8
 const speed = 0.01
 const clouddark = 0.6
-const cloudlight = 0.3
+const cloudlight = 0.1
 const cloudcover = 0.2
 const cloudalpha = 8.0
-const skytint = 0.5
+const skytint = 0.4
 const colorDepth = 64
 
 func rand(co vec2) float {
@@ -65,7 +65,7 @@ func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
 
     p := floor(srcPos.xy) / imageSrc0Size().xy;
 
-	uv := p*vec2(imageSrc0Size().x/imageSrc0Size().y,1.0);    
+	uv := p*vec2(imageSrc0Size().x/imageSrc0Size().y,1.0);
     time := Time * speed
     q := fbm(uv * cloudscale * 0.5)
 

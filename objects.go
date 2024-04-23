@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 
+    "math/rand/v2"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
@@ -138,7 +139,7 @@ func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
     o.x += o.vx
     
 
-    if o.vx > 0 {
+    if o.vx < 0 {
         direction = LEFT
     } else {
         direction = RIGHT
@@ -152,12 +153,15 @@ func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
     o.y += o.vy
 
     if o.vy > 0 {
-        direction = UP
-    } else {
         direction = DOWN
+    } else {
+        direction = UP
     }
 
     if o.HasCollision(tilemap, others, direction) {
+        if ! o.onGround && o.vy > gravity*10 {
+            o.playLand()
+        }
         o.onGround = true;
         o.vx *= o.friction
 
@@ -194,13 +198,13 @@ func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, dir Di
         if obj.Collide(o) {
             var f func(this, other *GameObject) bool
             switch dir {
-                case UP:
-                    f = obj.onCollideUp
                 case DOWN:
+                    f = obj.onCollideUp
+                case UP:
                     f = obj.onCollideDown
-                case LEFT:
-                    f = obj.onCollideLeft
                 case RIGHT:
+                    f = obj.onCollideLeft
+                case LEFT:
                     f = obj.onCollideRight
             }
 
@@ -256,8 +260,21 @@ func (object * GameObject) Collide(other *GameObject) bool {
     return ! ( minX2 >= maxX1 || maxX2 <= minX1 || minY2 >= maxY1 || maxY2 <= minY1)
 }
 
+func (object *GameObject) playLand() {
+    jumpid := rand.IntN(2)
+    object.game.audioPlayer.landAudio[jumpid].Rewind()
+    object.game.audioPlayer.landAudio[jumpid].Play()
+}
+
+func (object *GameObject) playJump() {
+    jumpid := rand.IntN(2)
+    object.game.audioPlayer.jumpAudio[jumpid].Rewind()
+    object.game.audioPlayer.jumpAudio[jumpid].Play()
+}
+
 func (object * GameObject) Jump() {
     if object.onGround {
+        object.playJump()
         object.vy += -jumpHeight
     }
 }
