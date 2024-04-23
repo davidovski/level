@@ -293,6 +293,8 @@ func (g *Game) Update() error {
                 bo = buttonOffset
                 if onButton && g.animStart <= 0{
                     g.animStart = g.time + 60
+                    g.audioPlayer.landAudio[0].Rewind()
+                    g.audioPlayer.landAudio[0].Play()
                     StartGame(g)
                 }
             }
