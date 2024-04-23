@@ -3,6 +3,11 @@ package main
 import (
     "fmt"
 )
+
+func StartGame(g *Game) {
+    StartLevel4(g)
+}
+
 func PauseScreen(g *Game) {
     g.SetPaused()
     fmt.Printf("PAUSE\n", 0, len(g.playerAi))
@@ -28,14 +33,14 @@ func levelStart(g *Game) {
     g.ResetAll()
     g.playerAiIdx = 0
     g.SetInGame()
+}
+
+func noMoveable(g *Game) {
     for _, o := range g.objects {
         o.movable = false
     }
 }
 
-func StartGame(g *Game) {
-    StartLevel1(g)
-}
 
 func StartLevel1(g *Game ) {
     g.SetInGame()
@@ -106,6 +111,7 @@ func StartLevel1(g *Game ) {
 
 func StartLevel2(g *Game) {
     g.SetPlacing()
+    noMoveable(g)
 
     g.toPlace = append(g.toPlace, NewLeftSpike(g, 0, 0))
 
@@ -118,6 +124,7 @@ func StartLevel2(g *Game) {
 
 func StartLevel3(g *Game) {
     g.SetPlacing()
+    noMoveable(g)
 
     g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
 
@@ -130,6 +137,8 @@ func StartLevel3(g *Game) {
 
 func StartLevel4(g *Game) {
     g.SetPlacing()
+    noMoveable(g)
+
     g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
 
     g.ClearAll()
@@ -139,11 +148,11 @@ func StartLevel4(g *Game) {
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  35, 36, 34, 35, 36, 34, 35, 36, 34, 67, 0,
+                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  50, 34,  67,  0,
+                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  37, 69,  70,  0,
+                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  39, 37,  38,  0,
+                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  55, 53,  54,  0,
+                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  35, 36, 34, 35, 36, 34, 35, 71, 69, 70, 0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  38, 39, 37, 38, 39, 37, 38, 39, 37, 38, 0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  54, 55, 53, 54, 55, 53, 54, 55, 53, 54, 0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  70, 71, 69, 70, 71, 69, 70, 71, 69, 70, 0,
@@ -157,11 +166,11 @@ func StartLevel4(g *Game) {
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  98,  82,  115,  0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  83, 84, 82, 83, 84, 82, 83, 84, 82, 115, 0,
+                0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  83, 84, 82, 83, 84, 82, 83, 0,  0,  0,  0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 0,
                 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 0,
@@ -174,7 +183,7 @@ func StartLevel4(g *Game) {
 
     g.tilemap = &tilemap
     g.tilemap.UpdateSurface()
-    g.exit.startx = 20 * tileSize
+    g.exit.startx = 18 * tileSize
     g.exit.starty = 6 * tileSize
 
     g.ResetAll()
@@ -188,9 +197,27 @@ func StartLevel4(g *Game) {
     g.QueueState(StartLevel5)
 }
 
+// HMM maybe we can make this a bit harder, lets try moving the exit by clicking on it
 func StartLevel5(g *Game) {
     g.SetPlacing()
-    g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
+    //noMoveable(g)
+
+    //g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
+    g.exit.movable = true
+    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
+    // after end
+    g.QueueState(ReverseLevel)
+    // after reversed
+    g.QueueState(afterReversed)
+    g.QueueState(StartLevel5)
+}
+
+// Ok lets add a spring there as well
+func StartLevel6(g *Game) {
+    g.SetPlacing()
+    //noMoveable(g)
+
+    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
     g.exit.movable = true
 
     // after end

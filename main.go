@@ -11,7 +11,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	_ "github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
     "github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
@@ -28,7 +28,6 @@ const (
     tileSize = 16
     playerSpeed = 2.1
     jumpHeight = 4
-    rewindSpeed = 2
     gravity = 0.16
     friction = 0.75
     airResistance = 0.98
@@ -71,6 +70,9 @@ var (
 
 	//go:embed assets/ambient.ogg
 	ambientOgg_src []byte
+
+	//go:embed assets/spring.ogg
+	springOgg_src []byte
 )
 
 var (
@@ -78,6 +80,8 @@ var (
     tilesImage *ebiten.Image
     characterImage *ebiten.Image
     fontFaceSource *text.GoTextFaceSource
+
+    rewindSpeed = 2
 )
 
 type State int
@@ -104,6 +108,7 @@ type AudioPlayer struct {
     stopAudio  *audio.Player
     startAudio  *audio.Player
     ambientAudio  *audio.Player
+    springAudio  *audio.Player
 }
 
 type Game struct {
@@ -236,6 +241,12 @@ func (g *Game) Init() {
 	}
 
 }
+func (g *Game) SetEditingMode() {
+        g.SetPlacing()
+        //g.playerAi = g.playerAi[:0]
+        g.ResetAll()
+        g.playerAiIdx = 0
+    }
 
 func (g *Game) Update() error {
     g.time += 1
@@ -255,6 +266,10 @@ func (g *Game) Update() error {
     }
 
     if g.state == IN_GAME {
+        if inpututil.IsKeyJustPressed(ebiten.KeyE) {
+            g.SetEditingMode()
+        }
+
         if inpututil.IsKeyJustPressed(ebiten.KeyR) {
             g.SetReversing()
             next := func (g *Game){
@@ -420,7 +435,7 @@ func (g *Game) DrawTheEnd(surface *ebiten.Image, alpha float32) {
     msg := fmt.Sprintf("THE END")
     textOp := &text.DrawOptions{}
     textOp.GeoM.Translate((screenWidth - textSize*7 ) / 2, (screenHeight - textSize) / 2)
-    textOp.ColorScale.ScaleWithColor(color.White)
+    textOp.ColorScale.ScaleWithColor(color.RGBA{55, 53, 53, 255})
     textOp.ColorScale.ScaleAlpha(alpha)
     text.Draw(surface, msg, &text.GoTextFace{
         Size:   textSize,
@@ -458,7 +473,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
         // draw THE END
         a :=  float64(endCardDuration - (g.time - g.animStart)) / float64(endCardDuration);
-        a = 1 - float64(math.Pow(float64(a), 10))
+        a = 1 - float64(math.Pow(float64(a), 2))
 
         if g.state == PAUSED {
             a = 10.0
@@ -484,7 +499,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
     PostProcess(screen, g.shaderName, g.time)
 
-    ebitenutil.DebugPrint(screen, fmt.Sprintf("tps: %.4f", ebiten.ActualFPS()))
+    //ebitenutil.DebugPrint(screen, fmt.Sprintf("tps: %.4f", ebiten.ActualFPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int){
@@ -533,9 +548,6 @@ func (g *Game) KillPlayer() {
             g.playerAi = g.playerAi[:0]
             g.SetInGame()
 
-            for _, o := range g.objects {
-                o.movable = false
-            }
         }
     }
 }
@@ -578,6 +590,7 @@ func (g *Game) SetPaused() {
 }
 func (g *Game) SetReversing() {
     g.state = REVERSING
+    rewindSpeed = 1 + int(len(g.recording) / 120)
     g.shaderName = "vcr"
     g.player.alpha = 1.0
     g.audioPlayer.rewindAudio.Rewind()
@@ -647,10 +660,8 @@ func (g *Game) LoadAudio() {
     g.audioPlayer.stopAudio = loadAudio(stopWav_src, g.audioPlayer.audioContext)
     g.audioPlayer.startAudio = loadAudio(startWav_src, g.audioPlayer.audioContext)
     g.audioPlayer.ambientAudio = loadAudioVorbis(ambientOgg_src, g.audioPlayer.audioContext)
+    g.audioPlayer.springAudio = loadAudioVorbis(springOgg_src, g.audioPlayer.audioContext)
 
-    if g.audioPlayer.ambientAudio == nil {
-        fmt.Printf("AUDIO NUL")
-    }
 }
 
 func (g *Game) LoadImages() {

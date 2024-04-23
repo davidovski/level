@@ -333,6 +333,8 @@ func OnCollideSpring(this, other *GameObject) bool {
     other.onGround = true
     this.state = 2
     this.delta = 1
+    this.game.audioPlayer.springAudio.Rewind()
+    this.game.audioPlayer.springAudio.Play()
     return false
 }
 
