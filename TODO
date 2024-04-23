@@ -1,9 +1,10 @@
 # TODO
 
-- [ ] animatePlayer
+- [x] animatePlayer
 - [ ] animateExit
 - [ ] add voiceover
 - [ ] add more levels
 - [ ] add more items
 - [ ] add enemies that you can control
-- [ ] add << and || on pause and play
+- [x] add << and || on pause and play
+- [ ] add menu
