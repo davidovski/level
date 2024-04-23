@@ -61,6 +61,8 @@ var (
 	cloudShader_src []byte
 	//go:embed shaders/bloom.kage
 	bloomShader_src []byte
+	//go:embed shaders/vortex.kage
+	vortexShader_src []byte
 
 	//go:embed assets/tiles.png
 	tilesPng_src []byte
@@ -274,7 +276,7 @@ func (g *Game) Init() {
     g.surface = ebiten.NewImage(screenWidth, screenHeight)
     g.shaderName = "sky"
     g.state = MENU
-
+    //StartGame(g)// TODO
     g.audioPlayer.ambientAudio.SetVolume(0)
 
 
@@ -435,11 +437,6 @@ func (g *Game) UpdatePlacing() {
     }
 
     if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
-        g.PlaceObject(cx, cy)
-    }
-}
-
-func (g *Game) PlaceObject(cx, cy int) {
         if len(g.toPlace) == 0 {
             object := GetObjectAt(g.objects, float32(cx), float32(cy))
             if object != nil {
@@ -448,6 +445,16 @@ func (g *Game) PlaceObject(cx, cy int) {
                     g.RemoveObject(object)
                 }
             }
+            return
+        }
+    } else if inpututil.IsMouseButtonJustReleased(ebiten.MouseButton0) {
+        g.PlaceObject(cx, cy)
+    }
+}
+
+func (g *Game) PlaceObject(cx, cy int) {
+
+        if len(g.toPlace) == 0 {
             return
         }
 
@@ -480,8 +487,26 @@ func DrawBackground(screen *ebiten.Image, time int)  {
 	screen.DrawRectShader(screenWidth, screenHeight, shaders["sky"], shop)
 }
 
-func PostProcess(screen *ebiten.Image, shaderName string, time int) {
+func PostProcess(screen *ebiten.Image, shaderName string, time int, game *Game) {
     w, h := screen.Bounds().Dx(), screen.Bounds().Dy()
+
+    //out := ebiten.NewImage(w, h)
+    //shop := &ebiten.DrawRectShaderOptions{}
+
+    //shop.Uniforms = map[string]any{
+    //    "Time":   float32(time) / 60,
+    //    "Ex":   game.exit.x,
+    //    "Ey":   game.exit.y,
+    //}
+    //shop.Images[0] = screen
+    //shop.Images[1] = screen
+    //shop.Images[2] = screen
+    //shop.Images[3] = screen
+    //out.DrawRectShader(w, h, shaders["vortex"], shop)
+
+    //op := &ebiten.DrawImageOptions{}
+    //screen.DrawImage(out, op)
+
     for _, shader := range []string{shaderName} {
         out := ebiten.NewImage(w, h)
         shop := &ebiten.DrawRectShaderOptions{}
@@ -669,7 +694,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
     }
 
 
-    PostProcess(screen, g.shaderName, g.time)
+    PostProcess(screen, g.shaderName, g.time, g)
 
     //ebitenutil.DebugPrint(screen, fmt.Sprintf("tps: %.4f", ebiten.ActualFPS()))
 }
@@ -699,6 +724,10 @@ func LoadShaders() error {
     }
 
     shaders["sky"], err = ebiten.NewShader([]byte(cloudShader_src))
+    if err != nil {
+        return err
+    }
+    shaders["vortex"], err = ebiten.NewShader([]byte(vortexShader_src))
     if err != nil {
         return err
     }
@@ -762,6 +791,7 @@ func (g *Game) SetPaused() {
 }
 func (g *Game) SetReversing() {
     g.state = REVERSING
+    g.audioPlayer.voiceAudio[0].Pause()
     rewindSpeed = 1 + int(len(g.recording) / 120)
     g.shaderName = "vcr"
     g.player.alpha = 1.0

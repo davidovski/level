@@ -11,7 +11,7 @@ import (
 )
 
 const (
-    SPRING_FORCE = 8
+    SPRING_FORCE = 7
     SIDE_SPRING_FORCE = 8
 )
 
@@ -57,7 +57,7 @@ type Player struct {
 
 func UpdateHPlatform(o * GameObject, tilemap Tilemap, others []*GameObject) bool {
     o.delta += 1
-    if int(o.delta / 128) % 2 == 0 {
+    if int(o.delta / 160) % 2 == 0 {
         o.vx = -0.4
     } else {
         o.vx = 0.4
@@ -69,7 +69,7 @@ func UpdateHPlatform(o * GameObject, tilemap Tilemap, others []*GameObject) bool
 
 func UpdateVPlatform(o * GameObject, tilemap Tilemap, others []*GameObject) bool {
     o.delta += 1
-    if int(o.delta / 128) % 2 == 0 {
+    if int(o.delta / 160) % 2 == 0 {
         o.vy = -0.4
     } else {
         o.vy = 0.4
@@ -162,7 +162,9 @@ func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
         if ! o.onGround && o.vy > gravity*12 {
             o.PlayLand()
         }
-        o.onGround = true;
+        if direction == DOWN {
+            o.onGround = true;
+        }
         o.vx *= o.friction
 
         o.y -= o.vy
@@ -378,7 +380,7 @@ func NewExit(game *Game, x, y float32) *GameObject{
     exit := NewObject(game, x, y)
 
     exit.images = []*ebiten.Image{
-        tilesImage.SubImage(image.Rect(0, 16, 32, 48)).(*ebiten.Image),
+        tilesImage.SubImage(image.Rect(0, 16, 31, 48)).(*ebiten.Image),
     }
     exit.onCollideUp = OnCollideExit
     exit.onCollideDown = OnCollideExit

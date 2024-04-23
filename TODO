@@ -1,10 +1,14 @@
 # TODO
 
+
 - [x] animatePlayer
+- [ ] add particles
+- [ ] subtle screen shake on death
+- [ ] add an actual ending
 - [ ] animateExit
-- [ ] add voiceover
+- [x] add voiceover
 - [ ] add more levels
-- [ ] add more items
-- [ ] add enemies that you can control
+- [x] add more items
 - [x] add << and || on pause and play
-- [ ] add menu
+- [x] add menu
+- [ ] add hints (press e to edit again, r to reverse)
