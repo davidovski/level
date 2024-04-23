@@ -159,8 +159,8 @@ func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
     }
 
     if o.HasCollision(tilemap, others, direction) {
-        if ! o.onGround && o.vy > gravity*1210 {
-            o.playLand()
+        if ! o.onGround && o.vy > gravity*12 {
+            o.PlayLand()
         }
         o.onGround = true;
         o.vx *= o.friction
@@ -264,7 +264,7 @@ func (object * GameObject) Collide(other *GameObject) bool {
     return ! ( minX2 >= maxX1 || maxX2 <= minX1 || minY2 >= maxY1 || maxY2 <= minY1)
 }
 
-func (object *GameObject) playLand() {
+func (object *GameObject) PlayLand() {
     jumpid := rand.IntN(2)
     object.game.audioPlayer.landAudio[jumpid].Rewind()
     object.game.audioPlayer.landAudio[jumpid].Play()

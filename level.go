@@ -1,9 +1,5 @@
 package main
 
-import (
-    "fmt"
-)
-
 func StartGame(g *Game) {
     //g.state = IN_GAME
     g.player = NewPlayer(g, 4 * tileSize, 9 * tileSize)
@@ -17,7 +13,6 @@ func StartGame(g *Game) {
 
 func PauseScreen(g *Game) {
     g.SetPaused()
-    fmt.Printf("PAUSE\n", 0, len(g.playerAi))
 }
 
 func ReverseLevel(g *Game) {

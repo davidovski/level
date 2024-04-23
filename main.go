@@ -33,9 +33,9 @@ const (
     friction = 0.75
     airResistance = 0.98
 
-    endCardDuration = 200
+    endCardDuration = 240
 
-    exitTransitionWeight = 0.8
+    exitTransitionWeight = 0.7
     ghostAlpha = 0.5
     hightlightBorder = 2
     audioFadeIn = 0.999
@@ -43,6 +43,7 @@ const (
     sampleRate = 44100
     shadowOffset = 1
 
+    killPlayerAfter = 80
     musicLoopLength = 230
 
     menuFadeInTime = 80
@@ -229,7 +230,7 @@ func (g * Game)ReplayPlayerAi() {
     }
 
     g.playerAiIdx += 1
-    if g.playerAiIdx >= len(g.playerAi) * 2 {
+    if g.playerAiIdx >= len(g.playerAi) + killPlayerAfter {
         g.KillPlayer()
     }
 
@@ -290,7 +291,7 @@ func (g *Game) Update() error {
             }
             if inpututil.IsMouseButtonJustReleased(ebiten.MouseButton0) {
                 bo = buttonOffset
-                if onButton {
+                if onButton && g.animStart <= 0{
                     g.animStart = g.time + 60
                     StartGame(g)
                 }
@@ -445,7 +446,7 @@ func (g *Game) PlaceObject(cx, cy int) {
         g.objects = append(g.objects, placeable)
 
         g.toPlace = g.toPlace[1:len(g.toPlace)]
-
+        placeable.PlayLand()
         if len(g.toPlace) == 0 && len(g.playerAi) == 0 {
             g.TransitionState()
         }
