@@ -356,6 +356,7 @@ func (g *Game) Update() error {
 
         for _, obj := range g.objects {
             obj.Update(*g.tilemap, g.objects)
+            obj.highlight = false
         }
 
         g.tilemap.Update()
@@ -765,9 +766,6 @@ func (g *Game) SetInGame() {
     g.player.alpha = 1.0
     g.StopRewinding()
 
-    for _, object := range g.objects {
-        object.highlight = false
-    }
 }
 
 func (g *Game) SetPlacing() {
