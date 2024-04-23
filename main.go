@@ -38,7 +38,7 @@ const (
     ghostAlpha = 0.5
     hightlightBorder = 2
     audioFadeIn = 0.99
-    musicVolume = 0.2
+    musicVolume = 0.5
 
     sampleRate = 44100
     shadowOffset = 1
@@ -49,6 +49,8 @@ const (
     menuFadeInTime = 80
     buttonOffset = 4.0
     buttonOffsetPressed = 2.0
+
+    masterVolume = 6.0
 )
 
 var (
@@ -423,6 +425,10 @@ func (g *Game) Update() error {
 func (g *Game) UpdatePlacing() {
     for _, obj := range g.objects {
         obj.Update(*g.tilemap, g.objects)
+        if obj.y > screenHeight {
+            g.toPlace = append(g.toPlace, obj)
+            g.RemoveObject(obj)
+        }
     }
 
     g.tilemap.Update()
@@ -848,6 +854,7 @@ func loadAudiosVorbis(oggFiles [][]byte, audioContext *audio.Context) []*audio.P
         if err != nil {
             return nil
         }
+        p.SetVolume(p.Volume()*masterVolume)
         players = append(players, p)
     }
     return players
@@ -866,6 +873,7 @@ func loadAudioVorbis(oggFile []byte, audioContext *audio.Context) *audio.Player 
     if err != nil {
         return nil
     }
+    p.SetVolume(p.Volume()*masterVolume)
     return p
 }
 func loadAudio(wavFile []byte, audioContext *audio.Context) *audio.Player {
@@ -881,6 +889,7 @@ func loadAudio(wavFile []byte, audioContext *audio.Context) *audio.Player {
     if err != nil {
         return nil
     }
+    p.SetVolume(p.Volume()*masterVolume)
     return p
 }
 

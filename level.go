@@ -308,108 +308,8 @@ func StartLevel6(g *Game) {
     g.QueueState(afterReversed)
     g.QueueState(StartLevel7)
 }
-
 // How about this?
 func StartLevel7(g *Game) {
-    g.SetPlacing()
-    //noMoveable(g)
-
-    g.ClearAll()
-    tilemap := NewTilemap([][]int{
-        {
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 50, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 66, 0, 0, 0, 0, 0, 
-0, 70, 71, 69, 70, 71, 69, 70, 71, 69, 70, 71, 69, 70, 71, 69, 70, 71, 69, 70, 0, 0, 0, 0, 0, 
-0, 38, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 54, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 70, 71, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 38, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 54, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 70, 71, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 38, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 54, 55, 34, 34, 34, 34, 34, 66, 0, 0, 0, 0, 0, 0, 0, 0, 50, 34, 34, 34, 34, 34, 66, 0, 
-0, 70, 71, 69, 70, 71, 69, 70, 71, 0, 0, 0, 0, 0, 0, 0, 50, 71, 69, 70, 71, 69, 70, 71, 0, 
-0, 38, 39, 37, 38, 39, 37, 38, 39, 0, 0, 0, 0, 0, 0, 0, 38, 39, 37, 38, 39, 37, 38, 39, 0, 
-0, 54, 55, 53, 54, 55, 53, 54, 55, 0, 0, 0, 0, 0, 0, 0, 54, 55, 53, 54, 55, 53, 54, 55, 0, 
-}, 
-{
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 98, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 114, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 82, 82, 82, 82, 82, 114, 0, 0, 0, 0, 0, 0, 0, 0, 98, 82, 82, 82, 82, 82, 114, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 98, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-}, 
-
-		}, 25)
-
-    g.tilemap = &tilemap
-    g.tilemap.UpdateSurface()
-    g.player.startx = 5 * tileSize
-    g.player.starty = 11 * tileSize
-
-    g.exit.startx = 20 * tileSize
-    g.exit.starty = 11 * tileSize
-
-    g.ResetAll()
-    g.playerAi = g.playerAi[:0]
-
-    g.QueueState(levelStart)
-
-    //g.audioPlayer.voiceAudio[3].Play()
-    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewRightSideSpring(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
-
-    g.audioPlayer.voiceAudio[6].Play()
-    // after end
-    g.QueueState(ReverseLevel)
-    // after reversed
-    g.QueueState(afterReversed)
-    g.QueueState(StartLevel8)
-}
-
-func StartLevel8(g *Game) {
-    g.SetPlacing()
-    noMoveable(g)
-    g.toPlace = append(g.toPlace, NewVPlatform(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
-    g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
-
-    g.exit.startx = 5 * tileSize
-    g.exit.starty = 1 * tileSize
-    g.exit.x = 5 * tileSize
-    g.exit.y = 1 * tileSize
-
-    g.audioPlayer.voiceAudio[7].Play()
-    // after end
-    g.QueueState(ReverseLevel)
-
-    // after reversed
-    g.QueueState(func (g *Game){
-        afterReversed(g)
-    })
-    g.QueueState(StartLevel9)
-}
-
-// How about this?
-func StartLevel9(g *Game) {
     g.SetPlacing()
     //noMoveable(g)
 
@@ -481,8 +381,108 @@ func StartLevel9(g *Game) {
     g.QueueState(ReverseLevel)
     // after reversed
     g.QueueState(afterReversed)
+    g.QueueState(StartLevel8)
+}
+
+// How about this?
+func StartLevel8(g *Game) {
+    g.SetPlacing()
+    //noMoveable(g)
+
+    g.ClearAll()
+    tilemap := NewTilemap([][]int{
+        {
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 50, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 66, 0, 0, 0, 0, 0, 
+0, 70, 71, 69, 70, 71, 69, 70, 71, 69, 70, 71, 69, 70, 71, 69, 70, 71, 69, 70, 0, 0, 0, 0, 0, 
+0, 38, 39, 37, 38, 39, 37, 38, 39, 37, 38, 39, 37, 38, 39, 37, 38, 39, 37, 38, 0, 0, 0, 0, 0, 
+0, 54, 55, 53, 54, 55, 53, 54, 55, 53, 54, 55, 53, 54, 55, 53, 54, 55, 53, 54, 0, 0, 0, 0, 0, 
+0, 70, 71, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 38, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 54, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 70, 71, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 38, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 54, 55, 34, 34, 34, 34, 34, 66, 0, 0, 0, 0, 0, 0, 0, 0, 50, 34, 34, 34, 34, 34, 66, 0, 
+0, 70, 71, 69, 70, 71, 69, 70, 71, 0, 0, 0, 0, 0, 0, 0, 50, 71, 69, 70, 71, 69, 70, 71, 0, 
+0, 38, 39, 37, 38, 39, 37, 38, 39, 0, 0, 0, 0, 0, 0, 0, 38, 39, 37, 38, 39, 37, 38, 39, 0, 
+0, 54, 55, 53, 54, 55, 53, 54, 55, 0, 0, 0, 0, 0, 0, 0, 54, 55, 53, 54, 55, 53, 54, 55, 0, 
+}, 
+{
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 98, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 82, 114, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 82, 82, 82, 82, 82, 114, 0, 0, 0, 0, 0, 0, 0, 0, 98, 82, 82, 82, 82, 82, 114, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 98, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+}, 
+		}, 25)
+
+    g.tilemap = &tilemap
+    g.tilemap.UpdateSurface()
+    g.player.startx = 5 * tileSize
+    g.player.starty = 11 * tileSize
+
+    g.exit.startx = 20 * tileSize
+    g.exit.starty = 11 * tileSize
+
+    g.ResetAll()
+    g.playerAi = g.playerAi[:0]
+
+    g.QueueState(levelStart)
+
+    //g.audioPlayer.voiceAudio[3].Play()
+    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewRightSideSpring(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
+
+    g.audioPlayer.voiceAudio[6].Play()
+    // after end
+    g.QueueState(ReverseLevel)
+    // after reversed
+    g.QueueState(afterReversed)
+    g.QueueState(StartLevel9)
+}
+
+func StartLevel9(g *Game) {
+    g.SetPlacing()
+    noMoveable(g)
+    g.toPlace = append(g.toPlace, NewVPlatform(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewBox(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
+    g.toPlace = append(g.toPlace, NewSpike(g, 0, 0))
+
+    g.exit.startx = 5 * tileSize
+    g.exit.starty = 1 * tileSize
+    g.exit.x = 5 * tileSize
+    g.exit.y = 1 * tileSize
+
+    g.audioPlayer.voiceAudio[7].Play()
+    // after end
+    g.QueueState(ReverseLevel)
+
+    // after reversed
+    g.QueueState(func (g *Game){
+        afterReversed(g)
+    })
     g.QueueState(StartLevelFinal)
 }
+
+
 func StartLevelFinal(g *Game) {
     g.SetPlacing()
     //noMoveable(g)
