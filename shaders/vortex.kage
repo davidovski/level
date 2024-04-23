@@ -1,0 +1,40 @@
+//go:build ignore
+
+//kage:unit pixels
+
+package main
+
+var Time float
+var Ex float
+var Ey float
+
+func height(uv vec2) float {
+    return imageSrc0UnsafeAt(uv).b*imageSrc0UnsafeAt((uv+vec2(0.0,Time*0.1))*imageSrc0Size()).b;
+}
+
+func normal(uv vec2) vec3 {
+    NE := vec2(0.05,0.0);
+    return normalize(vec3(height(uv+NE.xy)-height(uv-NE.xy),
+                          0.0,
+                          height(uv+NE.yx)-height(uv-NE.yx)));
+}
+
+
+
+func Fragment(dstPos vec4, srcPos vec2, color vec4) vec4 {
+    //lightDir := normalize(vec3(10.0,15.0,5.0));
+    uv := srcPos / imageSrc0Size()
+    //uv.y *= imageSrc0Size().y/imageSrc0Size().x;
+    
+    dist := length(uv);
+    angle := atan(uv.y/uv.x);
+    
+    ruv := uv;
+    uv = vec2(cos(angle+dist*3.),dist+(Time*0.2));
+
+    //h := height(uv);
+    norm := normal(uv);
+        return mix(vec4(0.), mix(
+        imageSrc0UnsafeAt(uv),
+                       imageSrc0UnsafeAt((norm.xz*0.5+0.5)*imageSrc0Size()),0.3),min(1.,length(ruv)*10.));
+}
