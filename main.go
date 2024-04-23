@@ -13,6 +13,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	_ "github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
     "github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/audio"
@@ -43,6 +44,10 @@ const (
     shadowOffset = 1
 
     musicLoopLength = 230
+
+    menuFadeInTime = 80
+    buttonOffset = 4.0
+    buttonOffsetPressed = 2.0
 )
 
 var (
@@ -96,12 +101,15 @@ var (
     fontFaceSource *text.GoTextFaceSource
 
     rewindSpeed = 2
+    bx, by, bw, bh float32
+    bo float32 = buttonOffset 
 )
 
 type State int
 
 const (
-	IN_GAME State = iota
+	MENU State = iota
+	IN_GAME
 	END
     PLACING
 	PAUSED
@@ -115,6 +123,7 @@ type RecPoint struct {
     vy float32
     alpha float32
     delta int
+    state int
 }
 
 type AudioPlayer struct {
@@ -161,6 +170,7 @@ func (g * Game)RecordPoint() {
             vy: object.vy,
             alpha: object.alpha,
             delta: object.delta,
+            state: object.state,
         })
     }
     g.recording = append(g.recording, points)
@@ -181,6 +191,7 @@ func (g * Game)ReplayPoint() {
         obj.vy = point.vy
         obj.alpha = point.alpha
         obj.delta = point.delta
+        obj.state = point.state
     }
 }
 
@@ -236,6 +247,7 @@ func (g * Game) ResetAll() {
         obj.vx = 0
         obj.vy = 0
         obj.delta = 0
+        obj.highlight = false
     }
     g.recording = g.recording[:0];
 }
@@ -243,14 +255,8 @@ func (g * Game) ResetAll() {
 func (g *Game) Init() {
     g.surface = ebiten.NewImage(screenWidth, screenHeight)
     g.shaderName = "sky"
+    g.state = MENU
 
-    g.player = NewPlayer(g, 4 * tileSize, 9 * tileSize)
-    g.objects = append(g.objects, g.player)
-    g.exit = NewExit(g, 21 * tileSize, 9 * tileSize)
-    g.objects = append(g.objects, g.exit)
-
-    g.ResetAll()
-    StartGame(g)
     g.audioPlayer.ambientAudio.SetVolume(0)
 
 
@@ -271,8 +277,29 @@ func (g *Game) SetEditingMode() {
 func (g *Game) Update() error {
     g.time += 1
 
+    if g.state == MENU {
+        if float32(g.time) > menuFadeInTime {
+            cx, cy := ebiten.CursorPosition()
+            onButton :=  float32(cx) > bx && float32(cy) > by && float32(cx) < bx + bw && float32(cy) < by + bh
+            if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
+                if onButton {
+                    bo = buttonOffsetPressed
+                } else {
+                    bo = buttonOffset
+                }
+            }
+            if inpututil.IsMouseButtonJustReleased(ebiten.MouseButton0) {
+                bo = buttonOffset
+                if onButton {
+                    g.animStart = g.time + 60
+                    StartGame(g)
+                }
+            }
+        }
+    }
 
-    if g.state == IN_GAME || g.state == PLACING {
+
+    if g.state == MENU || g.state == IN_GAME || g.state == PLACING {
         if g.audioPlayer.ambientAudio.Position().Seconds() > musicLoopLength {
             g.audioPlayer.ambientAudio.Rewind()
         }
@@ -351,10 +378,10 @@ func (g *Game) Update() error {
     if g.state == PLACING {
         g.UpdatePlacing()
     }
-
-    if g.player.y > screenHeight {
+    if g.player != nil && g.player.y > screenHeight {
         g.KillPlayer()
     }
+
 
 
     return nil
@@ -485,7 +512,50 @@ func (g *Game) DrawTheEnd(surface *ebiten.Image, alpha float32) {
         Size:   textSize,
         Source: fontFaceSource,
     }, textOp)
+}
 
+func (g *Game) DrawTitle(surface *ebiten.Image, alpha float32) {
+    textSize := 30.0
+    tmp := ebiten.NewImage(screenWidth, screenHeight)
+
+    msg := fmt.Sprintf("LEVEL")
+    textOp := &text.DrawOptions{}
+    textOp.GeoM.Translate((screenWidth - textSize*5 ) / 2, (screenHeight - textSize) / 3)
+    textOp.ColorScale.ScaleWithColor(color.RGBA{216, 211, 210, 255})
+    text.Draw(tmp, msg, &text.GoTextFace{
+        Size:   textSize,
+        Source: fontFaceSource,
+    }, textOp)
+    ShadowDraw(surface, tmp, 0, 0, alpha)
+}
+func (g *Game) DrawStart(surface *ebiten.Image, alpha float32) {
+    msg := fmt.Sprintf("play")
+    tmp := ebiten.NewImage(screenWidth, screenHeight)
+    var textSize float32 = 15.0
+
+    var x, y float32 = (screenWidth - textSize*5 ) / 2 + bo/2, (screenHeight + textSize) / 3 + screenHeight / 3 + bo/2
+    var padding float32 = 5.0
+
+    c := color.RGBA{55, 53, 53, 255}
+    bx, by, bw, bh =  x - padding, y - padding, (2*padding + float32(len(msg))*textSize) , (2.0*padding + textSize)
+    vector.DrawFilledRect(tmp, bx, by, bw, bh, c, false)
+
+    c = color.RGBA{79, 78, 78, 255}
+    vector.DrawFilledRect(tmp, bx-bo, by-bo, bw, bh, c, false)
+
+    textOp := &text.DrawOptions{}
+    textOp.GeoM.Translate(float64(x-bo), float64(y-bo))
+    textOp.ColorScale.ScaleWithColor(color.RGBA{216, 211, 210, 255})
+    //textOp.ColorScale.ScaleAlpha(alpha)
+    textOp.Filter = ebiten.FilterNearest
+    text.Draw(tmp, msg, &text.GoTextFace{
+        Size:   float64(textSize),
+        Source: fontFaceSource,
+    }, textOp)
+
+    op := &ebiten.DrawImageOptions{}
+    op.ColorScale.ScaleAlpha(alpha)
+    surface.DrawImage(tmp, op)
 }
 
 func (g *Game) IsShowTheEnd() bool {
@@ -496,6 +566,39 @@ func (g *Game) IsShowTheEnd() bool {
 func (g *Game) Draw(screen *ebiten.Image) {
 
     DrawBackground(screen, g.time)
+
+    if g.state == MENU {
+        var scale float32 = 1.0
+        delta := float32(g.time)
+        if g.animStart > 0 {
+            delta = float32((g.animStart+menuFadeInTime) - g.time)
+            scale = 0.5
+        }
+
+        if g.tilemap != nil {
+            polation := float32(math.Pow(float64(delta*scale)/menuFadeInTime, 3))*screenHeight
+            g.tilemap.Draw(screen, 0, polation - 2)
+        }
+
+        alpha := float32(delta) * scale / (menuFadeInTime/2.0)
+        if alpha > 1.0 {
+            alpha = 1.0
+        }
+        g.DrawTitle(screen, alpha)
+
+        alpha = float32(delta - (menuFadeInTime/2.0)) * scale / (menuFadeInTime/2.0)
+        if alpha > 1.0 {
+            alpha = 1.0
+        }
+        g.DrawStart(screen, alpha)
+
+
+        if g.animStart > 0 && delta <= 0 {
+            g.animStart = 0
+            g.SetInGame()
+        }
+        return
+    }
 
     g.surface.Fill(color.RGBA{0, 0, 0, 0})
     g.tilemap.Draw(g.surface, 0, -2)
@@ -512,7 +615,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
     }
 
     op := &ebiten.DrawImageOptions{}
-    op.GeoM.Translate(float64(g.offsetX), float64(g.offsetY-2))
+    op.GeoM.Translate(float64(g.offsetX), float64(g.offsetY))
     if g.IsShowTheEnd() {
 
         // draw THE END
@@ -661,6 +764,10 @@ func (g *Game) SetInGame() {
     g.state = IN_GAME
     g.player.alpha = 1.0
     g.StopRewinding()
+
+    for _, object := range g.objects {
+        object.highlight = false
+    }
 }
 
 func (g *Game) SetPlacing() {

@@ -5,6 +5,13 @@ import (
 )
 
 func StartGame(g *Game) {
+    //g.state = IN_GAME
+    g.player = NewPlayer(g, 4 * tileSize, 9 * tileSize)
+    g.objects = append(g.objects, g.player)
+    g.exit = NewExit(g, 21 * tileSize, 9 * tileSize)
+    g.objects = append(g.objects, g.exit)
+
+    g.ResetAll()
     StartLevel1(g)
 }
 
@@ -43,7 +50,7 @@ func noMoveable(g *Game) {
 
 
 func StartLevel1(g *Game ) {
-    g.SetInGame()
+    //g.SetInGame()
 
     tilemap := NewTilemap([][]int{
             {
@@ -206,6 +213,8 @@ func StartLevel5(g *Game) {
 
     //g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
     g.exit.movable = true
+    g.toPlace = append(g.toPlace, g.exit)
+    g.RemoveObject(g.exit)
     g.toPlace = append(g.toPlace, NewSpring(g, 0, 0))
     // after end
     g.QueueState(ReverseLevel)

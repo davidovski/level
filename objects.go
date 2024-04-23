@@ -159,7 +159,7 @@ func (o * GameObject) Update(tilemap Tilemap, others []*GameObject) {
     }
 
     if o.HasCollision(tilemap, others, direction) {
-        if ! o.onGround && o.vy > gravity*10 {
+        if ! o.onGround && o.vy > gravity*1210 {
             o.playLand()
         }
         o.onGround = true;
@@ -217,14 +217,18 @@ func (o * GameObject) HasCollision(tilemap Tilemap, others []*GameObject, dir Di
 
     return false
 }
-
 func ShadowDraw(screen *ebiten.Image, image *ebiten.Image, x, y float32, alpha float32) {
+    ShadowDrawOffset(screen, image, x, y, alpha, shadowOffset)
+    }
+
+
+func ShadowDrawOffset(screen *ebiten.Image, image *ebiten.Image, x, y, alpha, offset float32) {
     op := &ebiten.DrawImageOptions{}
-    if alpha > 0{
+    if alpha > 0 {
         op = &ebiten.DrawImageOptions{}
         op.ColorScale.ScaleAlpha(alpha)
         op.ColorScale.Scale(0, 0, 0, 1);
-        op.GeoM.Translate(float64(x+shadowOffset), float64(y + shadowOffset))
+        op.GeoM.Translate(float64(x+offset), float64(y + offset))
         screen.DrawImage(image, op)
     }
     op = &ebiten.DrawImageOptions{}
