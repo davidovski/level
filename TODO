@@ -3,12 +3,17 @@
 
 - [x] animatePlayer
 - [ ] add particles
+- [ ] add vortex shader to black hole
 - [ ] subtle screen shake on death
 - [?] add an actual ending
 - [ ] animateExit
+- [ ] add enemies
 - [x] add voiceover
-- [x] add more levels
+- [ ] add more levels
 - [x] add more items
 - [x] add << and || on pause and play
 - [x] add menu
-- [x] add hints (press e to edit again, r to reverse)
+- [ ] add hints (press e to edit again, r to reverse)
+- [ ] fix physics
+- [ ] remove softlocks when placing things at player spawn
+
